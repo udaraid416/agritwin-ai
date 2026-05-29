@@ -342,7 +342,7 @@ with tab_dashboard:
         pie_colors = ["#00A8FF", "#7C3AED", "var(--accent)", "#7FFF00", "#FFD700"]
         fig_pie = go.Figure(go.Pie(labels=pie_labels, values=pie_values, hole=0.55, marker=dict(colors=pie_colors, line=dict(color="#020C14", width=2)), textfont=dict(size=11)))
         fig_pie.add_annotation(text=f"<b>{sus_data['total']}</b>", x=0.5, y=0.5, font=dict(size=26, color="var(--accent)", family="Orbitron"), showarrow=False)
-        fig_pie.update_layout(**PLOTLY_LAYOUT, height=280, showlegend=True)
+        fig_pie.update_layout(**PLOTLY_LAYOUT, height=280)
         st.plotly_chart(fig_pie, use_container_width=True, config={"displayModeBar": False})
 
     st.markdown("---")
