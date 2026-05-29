@@ -11,11 +11,13 @@ import time
 import datetime
 import os
 import requests
+import json  # අලුතෙන් එකතු කළා - AI Response එක parse කරන්න
 import google.generativeai as genai
 import streamlit.components.v1 as components
 from streamlit_lottie import st_lottie
 from PIL import Image
 
+# ඔයාගේ වෙනත් ෆයිල් වලින් ගන්න දේවල්
 from config import (
     PARAM_DEFAULTS, GROWTH_STAGES,
     GRADE_COLORS, RISK_COLORS, ZONES, APP_TITLE, APP_ICON, VERSION
@@ -43,10 +45,12 @@ API_KEY = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
 if API_KEY:
     genai.configure(api_key=API_KEY)
 
-# Session States for Integrated Chatbots
+# Session States for Integrated Chatbots and Crop Params
 if "vision_result" not in st.session_state: st.session_state.vision_result = None
 if "vision_messages" not in st.session_state: st.session_state.vision_messages = []
 if "market_messages" not in st.session_state: st.session_state.market_messages = []
+if "crop_params" not in st.session_state: st.session_state.crop_params = PARAM_DEFAULTS
+if "is_valid_crop" not in st.session_state: st.session_state.is_valid_crop = True
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 🌗 DYNAMIC DAY/NIGHT THEME & CSS
@@ -133,11 +137,6 @@ header {{ background-color: transparent !important; }}
 .metric-value {{ font-family:'Orbitron',sans-serif; font-size:2rem; font-weight:700; line-height:1.1; }}
 .metric-label {{ font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-muted); margin-top:0.25rem; }}
 
-.grade-badge {{
-    display:inline-block; font-family:'Orbitron',sans-serif; font-size:3.5rem; font-weight:800; line-height:1; padding:0.3rem 0.8rem;
-    border-radius:12px; border: 2px solid currentColor; text-shadow: 0 0 24px currentColor; animation: pulseGlow 2.5s ease-in-out infinite;
-}}
-
 @keyframes progressFill {{ from {{ width: 0%; }} }}
 .progress-container {{ margin: 0.6rem 0; }}
 .progress-label {{ display:flex; justify-content:space-between; font-size:0.8rem; color:var(--text-muted); margin-bottom:0.3rem; }}
@@ -169,7 +168,7 @@ header {{ background-color: transparent !important; }}
 st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# HELPERS (LOTTIE & PLOTLY)
+# HELPERS (LOTTIE, PLOTLY & AI CROP OPTIMIZATION)
 # ─────────────────────────────────────────────────────────────────────────────
 @st.cache_data
 def load_lottieurl(url: str):
@@ -186,9 +185,40 @@ def plotly_dark_axes(fig):
     fig.update_xaxes(gridcolor="rgba(255,255,255,0.06)", zerolinecolor="rgba(255,255,255,0.1)")
     fig.update_yaxes(gridcolor="rgba(255,255,255,0.06)", zerolinecolor="rgba(255,255,255,0.1)")
     return fig
+
 def progress_html(label: str, value: float, color: str = "#00DEB4", max_val: float = 100) -> str:
     pct = min(100, max(0, value / max_val * 100))
     return f'<div class="progress-container"><div class="progress-label"><span>{label}</span><span>{value:.1f}</span></div><div class="progress-track"><div class="progress-fill" style="width:{pct}%;background:{color};"></div></div></div>'
+
+def fetch_optimal_crop_params(crop_name, stage):
+    """Fetches real optimal params from Gemini AI based on crop and stage."""
+    try:
+        model = genai.GenerativeModel("models/gemini-1.5-flash")
+        prompt = f"""
+        You are an expert agronomist. I am running a smart greenhouse/hydroponic system.
+        Provide the strictly optimal environmental parameters for growing '{crop_name}' at the '{stage}' growth stage.
+        If '{crop_name}' is a fake, unreal, or non-agricultural plant, set "valid_crop" to false.
+        
+        Return ONLY a valid JSON structure exactly like this (no markdown, no extra text):
+        {{
+            "valid_crop": true,
+            "temperature": 24.5,
+            "humidity": 65.0,
+            "co2_level": 800.0,
+            "soil_moisture": 60.0,
+            "ph_level": 6.0,
+            "ec_level": 1.5,
+            "light_intensity": 4000.0,
+            "ventilation_rate": 50.0,
+            "leaf_area_index": 2.5
+        }}
+        """
+        response = model.generate_content(prompt)
+        json_text = response.text.replace('```json', '').replace('```', '').strip()
+        data = json.loads(json_text)
+        return data
+    except Exception as e:
+        return None
 
 # ─────────────────────────────────────────────────────────────────────────────
 # SIDEBAR
@@ -198,23 +228,49 @@ with st.sidebar:
     st.markdown(f'<p class="hero-sub">v{VERSION} · Control Panel</p>', unsafe_allow_html=True)
     st.markdown("---")
 
-    crop_type    = st.text_input("🌱 Enter Crop Type", value="Lettuce", placeholder="e.g., Lettuce, Tomato...")
+    crop_type = st.text_input("🌱 Enter Crop Type", value="Lettuce", placeholder="e.g., Lettuce, Tomato...")
     growth_stage = st.selectbox("📈 Growth Stage", GROWTH_STAGES, index=1)
 
+    # ⚡ Get AI Crop Data Button
+    if st.button("🔍 Get AI Crop Data", type="primary", use_container_width=True):
+        if API_KEY:
+            with st.spinner(f"Researching optimal parameters for {crop_type}..."):
+                ai_params = fetch_optimal_crop_params(crop_type, growth_stage)
+                
+                if ai_params and ai_params.get("valid_crop"):
+                    st.session_state.crop_params = ai_params
+                    st.session_state.is_valid_crop = True
+                    st.success("✅ AI Data Loaded Successfully!")
+                else:
+                    st.session_state.is_valid_crop = False
+                    st.error("❌ Invalid crop. Please enter a real agricultural plant.")
+        else:
+            st.error("⚠️ API Key not found!")
+
+    st.markdown("---")
+    
+    # Get values from session state
+    current_params = st.session_state.crop_params
+    
+    # Block dashboard if fake crop is entered
+    if not st.session_state.is_valid_crop:
+        st.warning("⚠️ Enter a valid crop and click 'Get AI Crop Data' to unlock dashboard.")
+        st.stop()
+
     st.markdown('<p class="section-header">🌡 Climate Sensors</p>', unsafe_allow_html=True)
-    temperature      = st.slider("Temperature (°C)",     5.0,  50.0, PARAM_DEFAULTS["temperature"], 0.5)
-    humidity         = st.slider("Humidity (%)",          10.0, 99.0, PARAM_DEFAULTS["humidity"],    0.5)
-    co2_level        = st.slider("CO₂ (ppm)",            300.0,2000.0,PARAM_DEFAULTS["co2_level"],  10.0)
+    temperature      = st.slider("Temperature (°C)",     5.0,  50.0, float(current_params.get("temperature", 25.0)), 0.5)
+    humidity         = st.slider("Humidity (%)",         10.0, 99.0, float(current_params.get("humidity", 65.0)),  0.5)
+    co2_level        = st.slider("CO₂ (ppm)",            300.0,2000.0,float(current_params.get("co2_level", 800.0)), 10.0)
 
     st.markdown('<p class="section-header">💧 Soil & Water</p>', unsafe_allow_html=True)
-    soil_moisture    = st.slider("Soil Moisture (%)",    5.0,  99.0, PARAM_DEFAULTS["soil_moisture"], 0.5)
-    ph_level         = st.slider("pH Level",             4.0,   9.0, PARAM_DEFAULTS["ph_level"],      0.1)
-    ec_level         = st.slider("EC Level (mS/cm)",     0.5,   5.0, PARAM_DEFAULTS["ec_level"],      0.1)
+    soil_moisture    = st.slider("Soil Moisture (%)",    5.0,  99.0, float(current_params.get("soil_moisture", 60.0)), 0.5)
+    ph_level         = st.slider("pH Level",             4.0,   9.0, float(current_params.get("ph_level", 6.0)),      0.1)
+    ec_level         = st.slider("EC Level (mS/cm)",     0.5,   5.0, float(current_params.get("ec_level", 1.5)),      0.1)
 
     st.markdown('<p class="section-header">💡 Light & Airflow</p>', unsafe_allow_html=True)
-    light_intensity  = st.slider("Light Intensity (lux)",100.0,6000.0,PARAM_DEFAULTS["light_intensity"],50.0)
-    ventilation_rate = st.slider("Ventilation Rate (%)", 0.0,  100.0, PARAM_DEFAULTS["ventilation_rate"],1.0)
-    leaf_area_index  = st.slider("Leaf Area Index",      0.5,   7.0,  PARAM_DEFAULTS["leaf_area_index"],  0.1)
+    light_intensity  = st.slider("Light Intensity (lux)",100.0,6000.0,float(current_params.get("light_intensity", 3000.0)),50.0)
+    ventilation_rate = st.slider("Ventilation Rate (%)", 0.0,  100.0, float(current_params.get("ventilation_rate", 50.0)),1.0)
+    leaf_area_index  = st.slider("Leaf Area Index",      0.5,   7.0,  float(current_params.get("leaf_area_index", 2.0)),  0.1)
 
     st.markdown("---")
     st.markdown('<p class="section-header">🧊 3D Plant Model</p>', unsafe_allow_html=True)
@@ -266,7 +322,7 @@ with col_h2:
 st.markdown("---")
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 5 TABS SETUP (Removed NFT, Added Chatbots)
+# 5 TABS SETUP
 # ─────────────────────────────────────────────────────────────────────────────
 tab_dashboard, tab_chat, tab_vision, tab_finance, tab_hardware = st.tabs([
     "📊 SYSTEM DASHBOARD", "💬 MAIN AI ASSISTANT", "📸 DISEASE VISION SCANNER", 
@@ -346,7 +402,7 @@ with tab_dashboard:
         pie_colors = ["#00A8FF", "#7C3AED", "var(--accent)", "#7FFF00", "#FFD700"]
         fig_pie = go.Figure(go.Pie(labels=pie_labels, values=pie_values, hole=0.55, marker=dict(colors=pie_colors, line=dict(color="#020C14", width=2)), textfont=dict(size=11)))
         fig_pie.add_annotation(text=f"<b>{sus_data['total']}</b>", x=0.5, y=0.5, font=dict(size=26, color="var(--accent)", family="Orbitron"), showarrow=False)
-        fig_pie.update_layout(**PLOTLY_LAYOUT, height=280) # Fixed showlegend error here
+        fig_pie.update_layout(**PLOTLY_LAYOUT, height=280)
         st.plotly_chart(fig_pie, use_container_width=True, config={"displayModeBar": False})
 
     st.markdown("---")
@@ -497,7 +553,6 @@ with tab_vision:
                         except Exception as e:
                             st.error(f"Error: {e}")
 
-
 # =============================================================================
 # TAB 4: MARKET ANALYZER + INTEGRATED CHAT
 # =============================================================================
@@ -552,7 +607,7 @@ with tab_hardware:
     with h_col1:
         st.markdown('<div class="glass-card"><h4>📡 Hardware API Endpoint</h4>', unsafe_allow_html=True)
         st.markdown("Connect your ESP32, Arduino, or Raspberry Pi directly to this dashboard.")
-        st.code("POST https://agritwin-ai.streamlit.app/api/v1/sensorsnn{\n  \"api_key\": \"YOUR_SECRET_KEY\",\n  \"temp\": 28.5,\n  \"hum\": 65.2,\n  \"ec\": 1.8\n}", language="json")
+        st.code("POST https://agritwin-ai.streamlit.app/api/v1/sensors\n{\n  \"api_key\": \"YOUR_SECRET_KEY\",\n  \"temp\": 28.5,\n  \"hum\": 65.2,\n  \"ec\": 1.8\n}", language="json")
         st.button("🔄 Generate New API Key")
         st.markdown('</div>', unsafe_allow_html=True)
         
