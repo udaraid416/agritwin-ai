@@ -199,7 +199,7 @@ def fetch_optimal_crop_params(crop_name, stage):
         Provide the strictly optimal environmental parameters for growing '{crop_name}' at the '{stage}' growth stage.
         If '{crop_name}' is a fake, unreal, or non-agricultural plant, set "valid_crop" to false.
         
-        Return ONLY a valid JSON structure exactly like this (no markdown, no extra text):
+        Return ONLY a valid JSON. NO markdown, NO extra text.
         {{
             "valid_crop": true,
             "temperature": 24.5,
@@ -214,10 +214,22 @@ def fetch_optimal_crop_params(crop_name, stage):
         }}
         """
         response = model.generate_content(prompt)
-        json_text = response.text.replace('```json', '').replace('```', '').strip()
-        data = json.loads(json_text)
-        return data
+        
+        # හරියටම JSON කොටස විතරක් වෙන් කරගැනීම (Bulletproof JSON Extraction)
+        text_result = response.text
+        start_idx = text_result.find('{')
+        end_idx = text_result.rfind('}') + 1
+        
+        if start_idx != -1 and end_idx != 0:
+            json_text = text_result[start_idx:end_idx]
+            data = json.loads(json_text)
+            return data
+        else:
+            st.sidebar.error("⚠️ AI didn't return proper JSON format.")
+            return None
+            
     except Exception as e:
+        st.sidebar.error(f"⚠️ API Error: {e}") 
         return None
 
 # ─────────────────────────────────────────────────────────────────────────────
