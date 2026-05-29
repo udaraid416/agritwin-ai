@@ -642,6 +642,17 @@ with tab_dashboard:
 # TAB 2: AI AGRI-ASSISTANT (CHATBOT)
 # =============================================================================
 
+def get_working_text_model():
+    """Auto-detects a working text model from the user's API Key"""
+    try:
+        models = genai.list_models()
+        for m in models:
+            if 'generateContent' in m.supported_generation_methods and 'vision' not in m.name.lower():
+                return m.name
+    except:
+        pass
+    return "models/gemini-1.5-flash"
+
 with tab_chat:
     st.markdown('<p class="section-header">💬 AI Agri-Assistant</p>', unsafe_allow_html=True)
     st.markdown(f"Ask any questions related to agriculture, greenhouse management, or specifically about your **{crop_type}**.")
@@ -664,19 +675,32 @@ with tab_chat:
             with st.chat_message("assistant"):
                 with st.spinner("Thinking..."):
                     try:
-                        # Fixed to use the standard reliable flash model
-                        model = genai.GenerativeModel('gemini-1.5-flash')
+                        working_model_name = get_working_text_model()
+                        model = genai.GenerativeModel(working_model_name)
                         sys_prompt = f"You are an expert agricultural AI assistant. The user is currently growing {crop_type} at the {growth_stage} stage. Provide detailed, accurate, and practical advice."
                         response = model.generate_content(sys_prompt + "\n\nUser Question: " + prompt)
+                        
                         st.markdown(response.text)
                         st.session_state.messages.append({"role": "assistant", "content": response.text})
                     except Exception as e:
-                        st.error(f"Failed to generate response. Error: {e}")
+                        st.error(f"Failed to generate response. System tried to auto-detect model but failed. Error: {e}")
 
 
 # =============================================================================
 # TAB 3: DISEASE VISION SCANNER
 # =============================================================================
+
+def get_working_vision_model():
+    """Auto-detects a working vision model from the user's API Key"""
+    try:
+        models = genai.list_models()
+        for m in models:
+            if 'generateContent' in m.supported_generation_methods:
+                if 'vision' in m.name.lower() or 'flash' in m.name.lower():
+                    return m.name
+    except:
+        pass
+    return "models/gemini-1.5-flash"
 
 with tab_vision:
     st.markdown('<p class="section-header">📸 AI Disease Vision Scanner</p>', unsafe_allow_html=True)
@@ -702,8 +726,8 @@ with tab_vision:
                 if st.button("🔍 Scan for Diseases", type="primary", use_container_width=True):
                     with st.spinner("AI is scanning the image for pathogens and deficiencies..."):
                         try:
-                            # Fixed to use the standard reliable flash model for vision
-                            vision_model = genai.GenerativeModel('gemini-1.5-flash')
+                            working_vision_model_name = get_working_vision_model()
+                            vision_model = genai.GenerativeModel(working_vision_model_name)
                             vision_prompt = f"You are an expert plant pathologist. The user is growing {crop_type}. Analyze this image and identify any diseases, pests, or nutrient deficiencies. Provide the name of the issue, severity, and a 3-step actionable treatment plan. If the plant looks healthy, state that it is healthy."
                             
                             response = vision_model.generate_content([vision_prompt, image])
@@ -715,7 +739,7 @@ with tab_vision:
                                 f'<span style="font-size:0.95rem;line-height:1.7">{response.text}</span>'
                                 f'</div>', unsafe_allow_html=True)
                         except Exception as e:
-                            st.error(f"Image analysis failed. Error: {e}")
+                            st.error(f"Image analysis failed. System tried to auto-detect vision model but failed. Error: {e}")
             else:
                 st.info("Waiting for an image to analyze...")
 
