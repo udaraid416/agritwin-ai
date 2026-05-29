@@ -89,7 +89,8 @@ h1, h2, h3, h4, h5, h6 {
     letter-spacing: -0.02em;
 }
 
-#MainMenu, footer, header { visibility: hidden !important; }
+#MainMenu, footer { visibility: hidden !important; }
+   header { background-color: transparent !important; }
 .block-container { padding-top: 2rem !important; padding-bottom: 3rem !important; }
 
 /* ── Sidebar Styling ── */
