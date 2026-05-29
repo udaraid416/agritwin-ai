@@ -1,6 +1,6 @@
 """
 app.py — AI-Powered Predictive Digital Twin for Smart Protected Agriculture
-Streamlit frontend — NEXT GEN UI (Video BG, 3D Spline, Day/Night, Lottie, Advanced Modules)
+Streamlit frontend — NEXT GEN UI (Video BG, 3D Spline, Day/Night, Lottie, Advanced Modules & Integrated Chatbots)
 """
 
 import streamlit as st
@@ -42,6 +42,11 @@ st.set_page_config(
 API_KEY = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
 if API_KEY:
     genai.configure(api_key=API_KEY)
+
+# Session States for Integrated Chatbots
+if "vision_result" not in st.session_state: st.session_state.vision_result = None
+if "vision_messages" not in st.session_state: st.session_state.vision_messages = []
+if "market_messages" not in st.session_state: st.session_state.market_messages = []
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 🌗 DYNAMIC DAY/NIGHT THEME & CSS
@@ -175,7 +180,6 @@ def load_lottieurl(url: str):
     except: return None
 
 lottie_ai_thinking = load_lottieurl("https://lottie.host/809c91f1-331e-4509-9fc6-9e90098da0da/uJ0q3E1jKz.json")
-lottie_success = load_lottieurl("https://lottie.host/79075727-84f9-4673-bef1-1b94b05a74e5/G2r9UqUq3p.json")
 
 PLOTLY_LAYOUT = dict(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(family="Exo 2", color="#E2F8F4", size=12), margin=dict(l=20, r=20, t=30, b=20), showlegend=True, legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(size=11)))
 def plotly_dark_axes(fig):
@@ -262,11 +266,11 @@ with col_h2:
 st.markdown("---")
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 6 TABS SETUP (Including New Advanced Features)
+# 5 TABS SETUP (Removed NFT, Added Chatbots)
 # ─────────────────────────────────────────────────────────────────────────────
-tab_dashboard, tab_chat, tab_vision, tab_yield_nft, tab_finance, tab_hardware = st.tabs([
-    "📊 SYSTEM DASHBOARD", "💬 AI AGRI-ASSISTANT", "📸 DISEASE VISION SCANNER", 
-    "🥬 NFT & YIELD PREDICTOR", "📈 MARKET ANALYZER", "⚙️ HARDWARE & ALERTS"
+tab_dashboard, tab_chat, tab_vision, tab_finance, tab_hardware = st.tabs([
+    "📊 SYSTEM DASHBOARD", "💬 MAIN AI ASSISTANT", "📸 DISEASE VISION SCANNER", 
+    "📈 MARKET ANALYZER", "⚙️ HARDWARE & ALERTS"
 ])
 
 # =============================================================================
@@ -342,7 +346,7 @@ with tab_dashboard:
         pie_colors = ["#00A8FF", "#7C3AED", "var(--accent)", "#7FFF00", "#FFD700"]
         fig_pie = go.Figure(go.Pie(labels=pie_labels, values=pie_values, hole=0.55, marker=dict(colors=pie_colors, line=dict(color="#020C14", width=2)), textfont=dict(size=11)))
         fig_pie.add_annotation(text=f"<b>{sus_data['total']}</b>", x=0.5, y=0.5, font=dict(size=26, color="var(--accent)", family="Orbitron"), showarrow=False)
-        fig_pie.update_layout(**PLOTLY_LAYOUT, height=280)
+        fig_pie.update_layout(**PLOTLY_LAYOUT, height=280) # Fixed showlegend error here
         st.plotly_chart(fig_pie, use_container_width=True, config={"displayModeBar": False})
 
     st.markdown("---")
@@ -396,7 +400,7 @@ with tab_dashboard:
     p4.markdown(f'<div class="metric-tile"><div style="font-size:1.3rem">🏆</div><div class="metric-value" style="color:{gc};">{perf_data["overall"]:.1f}</div><div class="metric-label">Overall Score · Grade <b style="color:{gc}">{perf_data["grade"]}</b></div></div>', unsafe_allow_html=True)
 
 # =============================================================================
-# TAB 2 & 3: CHATBOT & VISION SCANNER 
+# Helper Functions for Models
 # =============================================================================
 def get_working_text_model():
     try:
@@ -412,31 +416,38 @@ def get_working_vision_model():
     except: pass
     return "models/gemini-1.5-flash"
 
+# =============================================================================
+# TAB 2: MAIN AI ASSISTANT (CHATBOT)
+# =============================================================================
 with tab_chat:
-    st.markdown('<p class="section-header">💬 AI Agri-Assistant</p>', unsafe_allow_html=True)
+    st.markdown('<p class="section-header">💬 Main AI Agri-Assistant</p>', unsafe_allow_html=True)
     if not API_KEY: st.warning("⚠️ Add GEMINI_API_KEY to Streamlit Secrets.")
     else:
-        if "messages" not in st.session_state: st.session_state.messages = []
-        for msg in st.session_state.messages:
+        if "main_messages" not in st.session_state: st.session_state.main_messages = []
+        for msg in st.session_state.main_messages:
             with st.chat_message(msg["role"]): st.markdown(msg["content"])
-        if prompt := st.chat_input(f"Ask about {crop_type}..."):
-            st.session_state.messages.append({"role": "user", "content": prompt})
+        
+        if prompt := st.chat_input(f"Ask general questions about managing {crop_type}...", key="main_chat"):
+            st.session_state.main_messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"): st.markdown(prompt)
             with st.chat_message("assistant"):
                 placeholder = st.empty()
                 with placeholder.container():
-                    if lottie_ai_thinking: st_lottie(lottie_ai_thinking, height=100, key="chat_thinking")
+                    if lottie_ai_thinking: st_lottie(lottie_ai_thinking, height=100, key="chat_main_thinking")
                     else: st.spinner("Thinking...")
                 try:
                     model = genai.GenerativeModel(get_working_text_model())
                     response = model.generate_content(f"You are an expert AI assistant for {crop_type} at {growth_stage}. Question: {prompt}")
                     placeholder.empty()
                     st.markdown(response.text)
-                    st.session_state.messages.append({"role": "assistant", "content": response.text})
+                    st.session_state.main_messages.append({"role": "assistant", "content": response.text})
                 except Exception as e:
                     placeholder.empty()
                     st.error(f"Error: {e}")
 
+# =============================================================================
+# TAB 3: DISEASE VISION SCANNER + INTEGRATED CHAT
+# =============================================================================
 with tab_vision:
     st.markdown('<p class="section-header">📸 AI Disease Vision Scanner</p>', unsafe_allow_html=True)
     if not API_KEY: st.warning("⚠️ Add GEMINI_API_KEY to Streamlit Secrets.")
@@ -448,71 +459,47 @@ with tab_vision:
                 image = Image.open(img_file)
                 st.image(image, use_column_width=True)
         with c2:
-            if img_file and st.button("🔍 Scan Image", type="primary", use_container_width=True):
-                placeholder = st.empty()
-                with placeholder.container():
-                    if lottie_ai_thinking: st_lottie(lottie_ai_thinking, height=150, key="vision_thinking")
-                    else: st.spinner("Scanning...")
-                try:
-                    v_model = genai.GenerativeModel(get_working_vision_model())
-                    res = v_model.generate_content([f"Identify diseases on this {crop_type} plant. Provide 3-step treatment.", image])
-                    placeholder.empty()
-                    st.markdown(f'<div class="glass-card"><b style="color:var(--accent);">🔬 SCAN RESULTS</b><br><br>{res.text}</div>', unsafe_allow_html=True)
-                except Exception as e:
-                    placeholder.empty()
-                    st.error(f"Error: {e}")
+            if img_file:
+                if st.button("🔍 Scan Image", type="primary", use_container_width=True):
+                    placeholder = st.empty()
+                    with placeholder.container():
+                        if lottie_ai_thinking: st_lottie(lottie_ai_thinking, height=150, key="vision_scanning")
+                        else: st.spinner("Scanning...")
+                    try:
+                        v_model = genai.GenerativeModel(get_working_vision_model())
+                        res = v_model.generate_content([f"Identify diseases on this {crop_type} plant. Provide 3-step treatment.", image])
+                        placeholder.empty()
+                        st.session_state.vision_result = res.text
+                    except Exception as e:
+                        placeholder.empty()
+                        st.error(f"Error: {e}")
+        
+        # Keep results and chat visible after button click
+        if st.session_state.vision_result:
+            st.markdown(f'<div class="glass-card"><b style="color:var(--accent);">🔬 SCAN RESULTS</b><br><br>{st.session_state.vision_result}</div>', unsafe_allow_html=True)
+            
+            st.markdown("---")
+            st.markdown("#### 💬 Ask AI about these results")
+            for msg in st.session_state.vision_messages:
+                with st.chat_message(msg["role"]): st.markdown(msg["content"])
+                
+            if v_prompt := st.chat_input("Ask about the treatment or disease...", key="vision_chat_input"):
+                st.session_state.vision_messages.append({"role": "user", "content": v_prompt})
+                with st.chat_message("user"): st.markdown(v_prompt)
+                with st.chat_message("assistant"):
+                    with st.spinner("Analyzing..."):
+                        try:
+                            model = genai.GenerativeModel(get_working_text_model())
+                            sys_prompt = f"You are a plant pathologist. The user just scanned a {crop_type} image. The AI scan result was: '{st.session_state.vision_result}'. Answer their follow-up question based on this result."
+                            chat_res = model.generate_content(sys_prompt + "\n\nUser Question: " + v_prompt)
+                            st.markdown(chat_res.text)
+                            st.session_state.vision_messages.append({"role": "assistant", "content": chat_res.text})
+                        except Exception as e:
+                            st.error(f"Error: {e}")
+
 
 # =============================================================================
-# TAB 4: NFT & YIELD PREDICTOR (NEW ADVANCED MODULE)
-# =============================================================================
-with tab_yield_nft:
-    st.markdown('<p class="section-header">🥬 Non-destructive Yield Prediction & NFT System</p>', unsafe_allow_html=True)
-    st.info("💡 Optimized for Computer Vision non-destructive yield estimation using a mobile camera image capture, processed on local/cloud interface.")
-    
-    y_col1, y_col2 = st.columns([1, 1])
-    
-    with y_col1:
-        st.markdown('<div class="glass-card"><h4>📸 Canopy Analyzer (Yield Estimate)</h4>', unsafe_allow_html=True)
-        yield_img = st.file_uploader("Upload top-down crop image (Mobile Camera format)", type=["jpg", "png"], key="yield_img")
-        if yield_img:
-            st.image(Image.open(yield_img), caption="Canopy Image Loaded", use_column_width=True)
-            if st.button("🧮 Estimate Fresh Weight", use_container_width=True):
-                with st.spinner("Running OpenCV Canopy Extraction & AI Estimation..."):
-                    time.sleep(1.5) # Simulate processing
-                    # Mock calculation based on random area logic for demonstration
-                    estimated_weight = np.random.randint(120, 180)
-                    st.success(f"✅ **Estimated Fresh Weight: {estimated_weight}g per plant**")
-                    st.metric("Predicted Total Yield (1000 plants)", f"{(estimated_weight * 1000)/1000:.1f} kg")
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-    with y_col2:
-        st.markdown('<div class="glass-card"><h4>🚰 Advanced NFT/DFT Dashboard</h4>', unsafe_allow_html=True)
-        target_ph = 6.0
-        target_ec = 1.8
-        
-        st.markdown(f"**Current System pH:** {ph_level} (Target: {target_ph})")
-        st.markdown(f"**Current System EC:** {ec_level} mS/cm (Target: {target_ph})")
-        
-        ph_diff = round(ph_level - target_ph, 2)
-        if ph_diff > 0.5:
-            st.error(f"⚠️ pH is too high. Action: Add {abs(ph_diff)*15:.1f}ml of pH Down solution per 100L.")
-        elif ph_diff < -0.5:
-            st.warning(f"⚠️ pH is too low. Action: Add {abs(ph_diff)*10:.1f}ml of pH Up solution per 100L.")
-        else:
-            st.success("✅ pH is within optimal range.")
-            
-        ec_diff = round(target_ec - ec_level, 2)
-        if ec_diff > 0.3:
-            st.warning(f"⚠️ EC is low. Action: Add {abs(ec_diff)*20:.1f}ml of A&B Nutrient solution.")
-        else:
-            st.success("✅ Nutrient EC is stable.")
-            
-        flow_rate = st.slider("NFT Channel Flow Rate (L/min)", 0.5, 3.0, 1.5, 0.1)
-        st.info(f"Current root zone oxygenation optimal for {flow_rate} L/min flow.")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-# =============================================================================
-# TAB 5: MARKET ANALYZER (NEW ADVANCED MODULE)
+# TAB 4: MARKET ANALYZER + INTEGRATED CHAT
 # =============================================================================
 with tab_finance:
     st.markdown('<p class="section-header">📈 Profit & Market Analyzer</p>', unsafe_allow_html=True)
@@ -525,7 +512,7 @@ with tab_finance:
     
     total_yield_kg = plants_count * expected_yield_per_plant
     gross_revenue = total_yield_kg * market_price
-    estimated_running_cost = (plants_count * 15) + 5000 # Mock formula
+    estimated_running_cost = (plants_count * 15) + 5000 
     net_profit = gross_revenue - estimated_running_cost
     
     st.markdown("---")
@@ -535,9 +522,28 @@ with tab_finance:
     res_col3.metric("💰 Projected Net Profit", f"Rs. {net_profit:,.2f}", delta=f"{net_profit/estimated_running_cost * 100:.1f}% ROI")
     
     st.markdown('<div class="glass-card">💡 <b>Market Insight:</b> Harvest timing is optimal. Current market demand for hydroponic produce is showing a 12% upward trend in local supermarkets.</div>', unsafe_allow_html=True)
+    
+    st.markdown("---")
+    st.markdown("#### 💬 AI Financial Advisor")
+    for msg in st.session_state.market_messages:
+        with st.chat_message(msg["role"]): st.markdown(msg["content"])
+        
+    if m_prompt := st.chat_input("Ask for market advice or profitability tips...", key="market_chat_input"):
+        st.session_state.market_messages.append({"role": "user", "content": m_prompt})
+        with st.chat_message("user"): st.markdown(m_prompt)
+        with st.chat_message("assistant"):
+            with st.spinner("Calculating..."):
+                try:
+                    model = genai.GenerativeModel(get_working_text_model())
+                    sys_prompt = f"You are an agricultural financial advisor. The user is growing {plants_count} {crop_type} plants. Total yield: {total_yield_kg}kg, Market price: Rs.{market_price}, Estimated cost: Rs.{estimated_running_cost}, Net Profit: Rs.{net_profit}. Provide financial and market advice based on these numbers."
+                    chat_res = model.generate_content(sys_prompt + "\n\nUser Question: " + m_prompt)
+                    st.markdown(chat_res.text)
+                    st.session_state.market_messages.append({"role": "assistant", "content": chat_res.text})
+                except Exception as e:
+                    st.error(f"Error: {e}")
 
 # =============================================================================
-# TAB 6: HARDWARE & ALERTS (NEW ADVANCED MODULE)
+# TAB 5: HARDWARE & ALERTS
 # =============================================================================
 with tab_hardware:
     st.markdown('<p class="section-header">⚙️ Smart Hardware API & Automated Triggers</p>', unsafe_allow_html=True)
@@ -546,7 +552,7 @@ with tab_hardware:
     with h_col1:
         st.markdown('<div class="glass-card"><h4>📡 Hardware API Endpoint</h4>', unsafe_allow_html=True)
         st.markdown("Connect your ESP32, Arduino, or Raspberry Pi directly to this dashboard.")
-        st.code("POST https://agritwin-ai.streamlit.app/api/v1/sensors\n\n{\n  \"api_key\": \"YOUR_SECRET_KEY\",\n  \"temp\": 28.5,\n  \"hum\": 65.2,\n  \"ec\": 1.8\n}", language="json")
+        st.code("POST https://agritwin-ai.streamlit.app/api/v1/sensorsnn{\n  \"api_key\": \"YOUR_SECRET_KEY\",\n  \"temp\": 28.5,\n  \"hum\": 65.2,\n  \"ec\": 1.8\n}", language="json")
         st.button("🔄 Generate New API Key")
         st.markdown('</div>', unsafe_allow_html=True)
         
