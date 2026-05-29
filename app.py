@@ -80,8 +80,9 @@ body, .stMarkdown, .stText, label, .stSelectbox label,
     color: var(--text-primary) !important;
 }
 
-/* ── Hide Streamlit chrome ── */
-#MainMenu, footer, header { visibility: hidden; }
+/* ── Hide Streamlit chrome pan header theva (sidebar button sathi) ── */
+#MainMenu, footer { visibility: hidden; }
+header { background-color: transparent !important; }
 .block-container { padding-top: 1.2rem !important; padding-bottom: 2rem !important; }
 
 /* ── Animated page-load hero ── */
@@ -665,14 +666,31 @@ with tab_chat:
             with st.chat_message("assistant"):
                 with st.spinner("Vichar karat ahe..."):
                     try:
-                        # ERROR FIXED HERE: Using gemini-pro instead of gemini-1.5-flash
-                        model = genai.GenerativeModel('gemini-pro')
+                        # Fallback Model Mechanism: 404 Error pasun vachnya sathi
+                        models_to_try = ['gemini-1.5-flash', 'gemini-1.0-pro', 'gemini-pro']
+                        response = None
+                        last_error = None
+                        
                         sys_prompt = f"Tumhi ek tadhnya krushi AI sahayyak ahat. Vaparkarta sadhya {growth_stage} tappyavar {crop_type} vadhavat ahe. Savisthar, achuk aani vyavaharik salla dya."
-                        response = model.generate_content(sys_prompt + "\n\nUser Question: " + prompt)
-                        st.markdown(response.text)
-                        st.session_state.messages.append({"role": "assistant", "content": response.text})
+                        
+                        for m in models_to_try:
+                            try:
+                                model = genai.GenerativeModel(m)
+                                response = model.generate_content(sys_prompt + "\n\nUser Question: " + prompt)
+                                if response:
+                                    break
+                            except Exception as e:
+                                last_error = e
+                                continue
+                                
+                        if response:
+                            st.markdown(response.text)
+                            st.session_state.messages.append({"role": "assistant", "content": response.text})
+                        else:
+                            st.error(f"Response generate karnyala apayash aale. Error: {last_error}")
+                            
                     except Exception as e:
-                        st.error(f"Response generate karnyala apayash aale. Error: {e}")
+                        st.error(f"System Error: {e}")
 
 
 # =============================================================================
@@ -703,20 +721,35 @@ with tab_vision:
                 if st.button("🔍 Rogansathi Scan Kara", type="primary", use_container_width=True):
                     with st.spinner("AI pathogens aani kamtartesathi image scan karat ahe..."):
                         try:
-                            # ERROR FIXED HERE: Using gemini-1.5-flash-latest
-                            vision_model = genai.GenerativeModel('gemini-1.5-flash-latest')
+                            # Fallback Model Mechanism: Vision sathi
+                            models_to_try = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro-vision']
+                            response = None
+                            last_error = None
+                            
                             vision_prompt = f"Tumhi ek tadhnya plant pathologist ahat. Vaparkarta {crop_type} vadhavat ahe. Ya image kade paha aani kontehi rog, keed, kiva poshak tatvanchi kamtarta sholudhun kadha. Rogache nav, tivrata, aani upchar sathi 3-step kruti salla dya. Jar rop nirougi disat asel, tar te nirougi ahe ase sanga."
                             
-                            response = vision_model.generate_content([vision_prompt, image])
-                            
-                            st.markdown(
-                                f'<div class="glass-card">'
-                                f'<b style="color:#00DEB4;font-family:Orbitron;font-size:0.9rem;">'
-                                f'🔬 SCAN CHE NIKAL</b><br><br>'
-                                f'<span style="font-size:0.95rem;line-height:1.7">{response.text}</span>'
-                                f'</div>', unsafe_allow_html=True)
+                            for m in models_to_try:
+                                try:
+                                    vision_model = genai.GenerativeModel(m)
+                                    response = vision_model.generate_content([vision_prompt, image])
+                                    if response:
+                                        break
+                                except Exception as e:
+                                    last_error = e
+                                    continue
+                                    
+                            if response:
+                                st.markdown(
+                                    f'<div class="glass-card">'
+                                    f'<b style="color:#00DEB4;font-family:Orbitron;font-size:0.9rem;">'
+                                    f'🔬 SCAN CHE NIKAL</b><br><br>'
+                                    f'<span style="font-size:0.95rem;line-height:1.7">{response.text}</span>'
+                                    f'</div>', unsafe_allow_html=True)
+                            else:
+                                st.error(f"Image analysis fail jhale. Error: {last_error}")
+                                
                         except Exception as e:
-                            st.error(f"Image analysis fail jhale. Error: {e}")
+                            st.error(f"System Error: {e}")
             else:
                 st.info("Analyze karnyasaathi image chi vaat pahat ahe...")
 
