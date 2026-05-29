@@ -1,4 +1,3 @@
-```python
 """
 app.py — AI-Powered Predictive Digital Twin for Smart Protected Agriculture
 Streamlit frontend — dark cinematic UI with glassmorphism & animations
