@@ -9,9 +9,12 @@ import plotly.express as px
 import numpy as np
 import time
 import datetime
+import os
+import google.generativeai as genai
+from PIL import Image
 
 from config import (
-    PARAM_DEFAULTS, CROP_TYPES, GROWTH_STAGES,
+    PARAM_DEFAULTS, GROWTH_STAGES,
     GRADE_COLORS, RISK_COLORS, ZONES, APP_TITLE, APP_ICON, VERSION
 )
 from utils import (
@@ -24,7 +27,7 @@ from ai_model import get_ai_recommendations, get_ai_engine_status
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# PAGE CONFIG
+# PAGE CONFIG & API SETUP
 # ─────────────────────────────────────────────────────────────────────────────
 
 st.set_page_config(
@@ -34,15 +37,19 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# Fetch API Key for Chat and Vision bots
+API_KEY = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
+if API_KEY:
+    genai.configure(api_key=API_KEY)
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # GLOBAL CSS — dark futuristic glassmorphism
 # ─────────────────────────────────────────────────────────────────────────────
-
 GLOBAL_CSS = """
 <style>
 /* ── Fonts ── */
-@import url('[https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Exo+2:wght@300;400;600&display=swap](https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Exo+2:wght@300;400;600&display=swap)');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Exo+2:wght@300;400;600&display=swap');
 
 /* ── Root palette ── */
 :root {
@@ -68,7 +75,7 @@ section[data-testid="stSidebar"] {
     border-right: 1px solid var(--glass-border) !important;
 }
 body, .stMarkdown, .stText, label, .stSelectbox label,
-.stSlider label, .stCheckbox label {
+.stSlider label, .stCheckbox label, .stTextInput label {
     font-family: 'Exo 2', sans-serif !important;
     color: var(--text-primary) !important;
 }
@@ -208,20 +215,18 @@ body, .stMarkdown, .stText, label, .stSelectbox label,
     font-weight:600; letter-spacing:0.06em;
 }
 
-/* ── Slider / selectbox styling ── */
+/* ── Inputs styling ── */
 .stSlider > div > div > div { background: var(--accent) !important; }
-.stSelectbox div[data-baseweb] { background: rgba(0,222,180,0.07) !important;
-    border: 1px solid var(--glass-border) !important; border-radius:8px !important; }
+.stSelectbox div[data-baseweb], .stTextInput input { background: rgba(0,222,180,0.07) !important;
+    border: 1px solid var(--glass-border) !important; border-radius:8px !important; color: #E2F8F4 !important;}
 .stSlider .stMarkdown { color: var(--text-muted) !important; }
 div[data-testid="stSidebarContent"] .stSlider .stMarkdown { color: var(--text-muted) !important; }
+.stTabs [data-baseweb="tab-list"] { background-color: transparent; }
+.stTabs [data-baseweb="tab"] { color: var(--text-muted); font-family: 'Orbitron', sans-serif; font-weight: 600; letter-spacing: 0.05em; }
+.stTabs [aria-selected="true"] { color: var(--accent) !important; border-bottom-color: var(--accent) !important; }
 
 /* ── Plotly chart container ── */
 .js-plotly-plot { border-radius:14px !important; }
-
-/* ── Scrollbar ── */
-::-webkit-scrollbar { width:6px; }
-::-webkit-scrollbar-track { background:var(--bg-deep); }
-::-webkit-scrollbar-thumb { background:var(--glass-border); border-radius:99px; }
 
 /* ── Live dot ── */
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
@@ -253,14 +258,12 @@ PLOTLY_LAYOUT = dict(
     legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(size=11)),
 )
 
-
 def plotly_dark_axes(fig):
     fig.update_xaxes(gridcolor="rgba(255,255,255,0.06)",
                      zerolinecolor="rgba(255,255,255,0.1)")
     fig.update_yaxes(gridcolor="rgba(255,255,255,0.06)",
                      zerolinecolor="rgba(255,255,255,0.1)")
     return fig
-
 
 def progress_html(label: str, value: float, color: str = "#00DEB4",
                   max_val: float = 100) -> str:
@@ -285,7 +288,8 @@ with st.sidebar:
                 unsafe_allow_html=True)
     st.markdown("---")
 
-    crop_type    = st.selectbox("🌱 Crop Type",    CROP_TYPES,    index=0)
+    # Custom Crop Input
+    crop_type    = st.text_input("🌱 Enter Crop Type", value="Tomato", placeholder="E.g., Strawberry, Chili...")
     growth_stage = st.selectbox("📈 Growth Stage", GROWTH_STAGES, index=1)
 
     st.markdown('<p class="section-header">🌡 Climate Sensors</p>', unsafe_allow_html=True)
@@ -306,7 +310,7 @@ with st.sidebar:
     st.markdown("---")
     engine_status = get_ai_engine_status()
     st.markdown(f'<span class="engine-pill">🤖 {engine_status}</span>', unsafe_allow_html=True)
-    run_ai = st.button("⚡ Run AI Analysis", use_container_width=True, type="primary")
+    run_ai = st.button("⚡ Run Detailed AI Analysis", use_container_width=True, type="primary")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -340,8 +344,8 @@ analysis["performance"] = perf_data
 if "ai_result" not in st.session_state:
     st.session_state["ai_result"] = None
 if run_ai:
-    with st.spinner("🤖 AI Engine processing greenhouse data…"):
-        time.sleep(0.6)   # UX micro-delay
+    with st.spinner(f"🤖 AI Engine processing deep analysis for {crop_type}…"):
+        time.sleep(0.6)
         st.session_state["ai_result"] = get_ai_recommendations(params, analysis)
 
 
@@ -368,319 +372,351 @@ with col_h2:
 
 st.markdown("---")
 
-
 # ─────────────────────────────────────────────────────────────────────────────
-# ROW 1 — KPI METRIC TILES
+# TABS SETUP
 # ─────────────────────────────────────────────────────────────────────────────
 
-k1, k2, k3, k4, k5, k6 = st.columns(6)
+tab_dashboard, tab_chat, tab_vision = st.tabs([
+    "📊 SYSTEM DASHBOARD", 
+    "💬 AI AGRI-ASSISTANT", 
+    "📸 DISEASE VISION SCANNER"
+])
 
-def kpi(col, emoji, value, unit, label, color="#00DEB4"):
-    col.markdown(
+# =============================================================================
+# TAB 1: SYSTEM DASHBOARD
+# =============================================================================
+
+with tab_dashboard:
+    # ROW 1 — KPI METRIC TILES
+    k1, k2, k3, k4, k5, k6 = st.columns(6)
+
+    def kpi(col, emoji, value, unit, label, color="#00DEB4"):
+        col.markdown(
+            f'<div class="metric-tile">'
+            f'<div style="font-size:1.4rem">{emoji}</div>'
+            f'<div class="metric-value" style="color:{color};">{value}{unit}</div>'
+            f'<div class="metric-label">{label}</div>'
+            f'</div>', unsafe_allow_html=True)
+
+    kpi(k1, "🌡", f"{temperature:.1f}", "°C", "Temperature", "#FF6B6B" if temperature > 30 else "#00DEB4")
+    kpi(k2, "💧", f"{humidity:.1f}", "%",  "Humidity", "#F59E0B" if humidity > 80 else "#00A8FF")
+    kpi(k3, "🌱", f"{soil_moisture:.1f}", "%", "Soil Moisture", "#EF4444" if soil_moisture < 30 else "#7FFF00")
+    kpi(k4, "💨", f"{co2_level:.0f}", "", "CO₂ ppm", "#F59E0B" if co2_level < 600 else "#00DEB4")
+    kpi(k5, "☀️", f"{light_intensity:.0f}", "", "Lux", "#FFD700")
+    kpi(k6, "🌬", f"{ventilation_rate:.0f}", "%", "Ventilation", "#EF4444" if ventilation_rate < 40 else "#00DEB4")
+
+    # ROW 2 — SUSTAINABILITY + DISEASE RISK + IRRIGATION
+    st.markdown("---")
+    c_sus, c_dis, c_irr = st.columns([1.2, 1.2, 1.2])
+
+    with c_sus:
+        st.markdown('<p class="section-header">♻️ Sustainability Score</p>', unsafe_allow_html=True)
+        gc = sus_data["grade_color"]
+        st.markdown(
+            f'<div class="glass-card" style="text-align:center">'
+            f'<span class="grade-badge" style="color:{gc}">{sus_data["grade"]}</span><br>'
+            f'<div style="font-family:Orbitron;font-size:2.2rem;color:{gc};margin:0.4rem 0">'
+            f'{sus_data["total"]}<span style="font-size:1rem;">/100</span></div>'
+            f'</div>', unsafe_allow_html=True)
+
+        html_bars = ""
+        metrics = [
+            ("Water Efficiency",    sus_data["water_efficiency"],     "#00A8FF"),
+            ("Energy Efficiency",   sus_data["energy_efficiency"],    "#7C3AED"),
+            ("Climate Control",     sus_data["climate_optimization"], "#00DEB4"),
+            ("Disease Prevention",  sus_data["disease_prevention"],   "#7FFF00"),
+            ("Yield Potential",     sus_data["yield_potential"],      "#FFD700"),
+        ]
+        for lbl, val, clr in metrics:
+            html_bars += progress_html(lbl, val, clr)
+        st.markdown(f'<div class="glass-card">{html_bars}</div>', unsafe_allow_html=True)
+
+    with c_dis:
+        st.markdown('<p class="section-header">🦠 Disease Risk Analysis</p>', unsafe_allow_html=True)
+        dlc = dis_data["level_color"]
+        st.markdown(
+            f'<div class="glass-card" style="text-align:center">'
+            f'<span class="risk-badge" style="background:{dlc}22;color:{dlc};border:1px solid {dlc};">'
+            f'{dis_data["level"].upper()}</span><br>'
+            f'<div style="font-family:Orbitron;font-size:2.4rem;color:{dlc};margin:0.4rem 0">'
+            f'{dis_data["overall"]:.1f}<span style="font-size:1rem;">%</span></div>'
+            f'<div style="font-size:0.75rem;color:rgba(226,248,244,0.5);">Overall Risk Index</div>'
+            f'</div>', unsafe_allow_html=True)
+
+        disease_html = ""
+        d_colors = ["#EF4444", "#F59E0B", "#7C3AED", "#00A8FF"]
+        for i, (name, val) in enumerate(dis_data["diseases"].items()):
+            clr = d_colors[i % len(d_colors)]
+            disease_html += progress_html(name, val, clr)
+        st.markdown(f'<div class="glass-card">{disease_html}</div>', unsafe_allow_html=True)
+
+    with c_irr:
+        st.markdown('<p class="section-header">💦 Irrigation Intelligence</p>', unsafe_allow_html=True)
+        isc = irr_data["status_color"]
+        st.markdown(
+            f'<div class="glass-card" style="text-align:center">'
+            f'<span class="status-pill" style="background:{isc}22;color:{isc};border:1px solid {isc};">'
+            f'{irr_data["status"].upper()}</span><br>'
+            f'<div style="font-family:Orbitron;font-size:2.2rem;color:{isc};margin:0.4rem 0">'
+            f'{irr_data["urgency"]:.1f}<span style="font-size:1rem;">%</span></div>'
+            f'<div style="font-size:0.75rem;color:rgba(226,248,244,0.5);">Urgency Index</div>'
+            f'</div>', unsafe_allow_html=True)
+
+        st.markdown(
+            f'<div class="glass-card">'
+            + progress_html("Irrigation Urgency", irr_data["urgency"], isc)
+            + f'<div style="margin-top:0.8rem;font-size:0.85rem;">'
+            f'📦 Volume Required: <b style="color:{isc}">{irr_data["volume_liters"]:.2f} L/m²</b><br>'
+            f'⏰ Next Irrigation: <b style="color:{isc}">{irr_data["next_irrigation_hours"]}h</b><br>'
+            f'🌿 ET₀ Rate: <b style="color:{isc}">{irr_data["evapotranspiration"]:.3f} mm/hr</b>'
+            f'</div></div>', unsafe_allow_html=True)
+
+    # ROW 3 — CHARTS
+    st.markdown("---")
+    ch1, ch2, ch3 = st.columns(3)
+
+    with ch1:
+        st.markdown('<p class="section-header">📊 24h Climate Trend</p>', unsafe_allow_html=True)
+        trend = generate_trend_data(temperature, humidity, 24)
+        fig_trend = go.Figure()
+        fig_trend.add_trace(go.Scatter(
+            x=trend["times"], y=trend["temperatures"], name="Temp °C",
+            line=dict(color="#FF6B6B", width=2), fill="tozeroy",
+            fillcolor="rgba(255,107,107,0.08)"))
+        fig_trend.add_trace(go.Scatter(
+            x=trend["times"], y=trend["humidities"], name="Humidity %",
+            line=dict(color="#00A8FF", width=2), fill="tozeroy",
+            fillcolor="rgba(0,168,255,0.06)"))
+        fig_trend.add_trace(go.Scatter(
+            x=trend["times"], y=trend["soil_moisture"], name="Soil %",
+            line=dict(color="#7FFF00", width=2, dash="dot")))
+        fig_trend.update_layout(**PLOTLY_LAYOUT, height=280,
+                                 xaxis=dict(tickangle=45, nticks=8))
+        plotly_dark_axes(fig_trend)
+        st.plotly_chart(fig_trend, use_container_width=True, config={"displayModeBar": False})
+
+    with ch2:
+        st.markdown('<p class="section-header">🎯 Risk Radar</p>', unsafe_allow_html=True)
+        radar_cats = ["Disease Risk", "Heat Stress", "Water Stress",
+                       "CO₂ Deficit", "Ventilation Risk", "Yield Risk"]
+        heat_pct   = min(100, max(0, (heat_data["heat_index"] - 20) * 2))
+        water_str  = max(0, 100 - sus_data["water_efficiency"])
+        co2_def    = max(0, (900 - co2_level) / 9)
+        vent_risk  = max(0, 100 - ventilation_rate)
+        yield_risk = max(0, 100 - sus_data["yield_potential"])
+        vals = [dis_data["overall"], heat_pct, water_str,
+                co2_def, vent_risk, yield_risk]
+        fig_radar = go.Figure(go.Scatterpolar(
+            r=vals + [vals[0]], theta=radar_cats + [radar_cats[0]],
+            fill="toself",
+            fillcolor="rgba(239,68,68,0.15)",
+            line=dict(color="#EF4444", width=2),
+            name="Risk Levels"))
+        fig_radar.update_layout(**PLOTLY_LAYOUT, height=280,
+            polar=dict(
+                bgcolor="rgba(0,0,0,0)",
+                radialaxis=dict(range=[0,100], gridcolor="rgba(255,255,255,0.1)",
+                                tickfont=dict(size=9, color="#E2F8F4"), showline=False),
+                angularaxis=dict(gridcolor="rgba(255,255,255,0.1)",
+                                 tickfont=dict(size=10, color="#E2F8F4"))))
+        st.plotly_chart(fig_radar, use_container_width=True, config={"displayModeBar": False})
+
+    with ch3:
+        st.markdown('<p class="section-header">🥧 Sustainability Breakdown</p>', unsafe_allow_html=True)
+        pie_labels = ["Water", "Energy", "Climate", "Disease Prev.", "Yield"]
+        pie_values = [sus_data["water_efficiency"], sus_data["energy_efficiency"],
+                       sus_data["climate_optimization"], sus_data["disease_prevention"],
+                       sus_data["yield_potential"]]
+        pie_colors = ["#00A8FF", "#7C3AED", "#00DEB4", "#7FFF00", "#FFD700"]
+        fig_pie = go.Figure(go.Pie(
+            labels=pie_labels, values=pie_values, hole=0.55,
+            marker=dict(colors=pie_colors, line=dict(color="#020C14", width=2)),
+            textfont=dict(size=11)))
+        fig_pie.add_annotation(text=f"<b>{sus_data['total']}</b>",
+            x=0.5, y=0.5, font=dict(size=26, color="#00DEB4", family="Orbitron"),
+            showarrow=False)
+        fig_pie.update_layout(**PLOTLY_LAYOUT)
+        fig_pie.update_layout(height=280, showlegend=True)
+        st.plotly_chart(fig_pie, use_container_width=True, config={"displayModeBar": False})
+
+    # ROW 4 — HEATMAPS
+    st.markdown("---")
+    hm1, hm2 = st.columns(2)
+    temp_grid, hum_grid = generate_zone_heatmap_data(temperature, humidity)
+
+    with hm1:
+        st.markdown('<p class="section-header">🌡 Zone Temperature Heatmap</p>', unsafe_allow_html=True)
+        fig_ht = go.Figure(go.Heatmap(
+            z=temp_grid, text=[[f"{v:.1f}°C" for v in row] for row in temp_grid],
+            texttemplate="%{text}", colorscale="RdYlGn_r",
+            colorbar=dict(title="°C", tickfont=dict(color="#E2F8F4")),
+            showscale=True))
+        fig_ht.update_layout(**PLOTLY_LAYOUT, height=260)
+        st.plotly_chart(fig_ht, use_container_width=True, config={"displayModeBar": False})
+
+    with hm2:
+        st.markdown('<p class="section-header">💧 Zone Humidity Heatmap</p>', unsafe_allow_html=True)
+        fig_hh = go.Figure(go.Heatmap(
+            z=hum_grid, text=[[f"{v:.1f}%" for v in row] for row in hum_grid],
+            texttemplate="%{text}", colorscale="Blues",
+            colorbar=dict(title="%", tickfont=dict(color="#E2F8F4")),
+            showscale=True))
+        fig_hh.update_layout(**PLOTLY_LAYOUT, height=260)
+        st.plotly_chart(fig_hh, use_container_width=True, config={"displayModeBar": False})
+
+    # ROW 5 — AI RECOMMENDATION PANEL
+    st.markdown("---")
+    st.markdown('<p class="section-header">🤖 AI Prediction & Recommendation Engine</p>', unsafe_allow_html=True)
+
+    ai_res = st.session_state.get("ai_result")
+
+    if not ai_res:
+        st.markdown(
+            '<div class="glass-card" style="text-align:center;padding:2rem;">'
+            '<div style="font-size:2.5rem">⚡</div>'
+            '<div style="font-family:Orbitron;color:#00DEB4;margin:0.5rem 0;">AI Engine Ready</div>'
+            '<div style="color:rgba(226,248,244,0.5);font-size:0.85rem;">'
+            f'Click <b>Run Detailed AI Analysis</b> in the sidebar to generate intelligent predictions for {crop_type}.</div>'
+            '</div>', unsafe_allow_html=True)
+    else:
+        src_col, _ = st.columns([2, 3])
+        with src_col:
+            st.markdown(f'<span class="engine-pill">Source: {ai_res.get("source","AI Engine")}</span>', unsafe_allow_html=True)
+
+        ai_c1, ai_c2 = st.columns(2)
+        with ai_c1:
+            st.markdown(
+                f'<div class="ai-card"><h4>🦠 Disease Warning</h4>'
+                f'<p>{ai_res.get("disease_warning","—")}</p></div>', unsafe_allow_html=True)
+            st.markdown(
+                f'<div class="ai-card"><h4>🌡 Climate Warning</h4>'
+                f'<p>{ai_res.get("climate_warning","—")}</p></div>', unsafe_allow_html=True)
+        with ai_c2:
+            st.markdown(
+                f'<div class="ai-card"><h4>💦 Irrigation Advice</h4>'
+                f'<p>{ai_res.get("irrigation_advice","—")}</p></div>', unsafe_allow_html=True)
+            st.markdown(
+                f'<div class="ai-card"><h4>♻️ Sustainability Insight</h4>'
+                f'<p>{ai_res.get("sustainability_insight","—")}</p></div>', unsafe_allow_html=True)
+
+        st.markdown('<p style="font-family:Orbitron;font-size:0.8rem;color:#00DEB4;'
+                    'letter-spacing:0.1em;margin-top:0.8rem;">⚡ PRIORITY ACTIONS</p>', unsafe_allow_html=True)
+        for i, action in enumerate(ai_res.get("top_actions", []), 1):
+            st.markdown(f'<div class="action-item">{"🔴" if i==1 else "🟡" if i==2 else "🟢"} '
+                        f'<b>#{i}</b> — {action}</div>', unsafe_allow_html=True)
+
+        st.markdown(
+            f'<div class="glass-card" style="margin-top:0.5rem">'
+            f'<b style="color:#00DEB4;font-family:Orbitron;font-size:0.75rem;">'
+            f'📋 OVERALL DETAILED ASSESSMENT</b><br><br>'
+            f'<span style="font-size:0.92rem;line-height:1.7">{ai_res.get("overall_assessment","—")}</span>'
+            f'</div>', unsafe_allow_html=True)
+
+    # ROW 6 — PERFORMANCE EVALUATION
+    st.markdown("---")
+    st.markdown('<p class="section-header">📊 System Performance Evaluation</p>', unsafe_allow_html=True)
+
+    p1, p2, p3, p4 = st.columns(4)
+    def perf_card(col, icon, label, val, color):
+        col.markdown(
+            f'<div class="metric-tile">'
+            f'<div style="font-size:1.3rem">{icon}</div>'
+            f'<div class="metric-value" style="color:{color};">{val:.1f}</div>'
+            f'<div class="metric-label">{label}</div>'
+            f'</div>', unsafe_allow_html=True)
+
+    gc = perf_data["grade_color"]
+    perf_card(p1, "🎯", "Prediction Accuracy",    perf_data["prediction_accuracy"],    "#00A8FF")
+    perf_card(p2, "⚙️", "System Efficiency",      perf_data["system_efficiency"],      "#7C3AED")
+    perf_card(p3, "🏡", "Greenhouse Performance", perf_data["greenhouse_performance"], "#00DEB4")
+    p4.markdown(
         f'<div class="metric-tile">'
-        f'<div style="font-size:1.4rem">{emoji}</div>'
-        f'<div class="metric-value" style="color:{color};">{value}{unit}</div>'
-        f'<div class="metric-label">{label}</div>'
-        f'</div>', unsafe_allow_html=True)
-
-kpi(k1, "🌡", f"{temperature:.1f}", "°C", "Temperature",
-    "#FF6B6B" if temperature > 30 else "#00DEB4")
-kpi(k2, "💧", f"{humidity:.1f}", "%",  "Humidity",
-    "#F59E0B" if humidity > 80 else "#00A8FF")
-kpi(k3, "🌱", f"{soil_moisture:.1f}", "%", "Soil Moisture",
-    "#EF4444" if soil_moisture < 30 else "#7FFF00")
-kpi(k4, "💨", f"{co2_level:.0f}", "", "CO₂ ppm",
-    "#F59E0B" if co2_level < 600 else "#00DEB4")
-kpi(k5, "☀️", f"{light_intensity:.0f}", "", "Lux",
-    "#FFD700")
-kpi(k6, "🌬", f"{ventilation_rate:.0f}", "%", "Ventilation",
-    "#EF4444" if ventilation_rate < 40 else "#00DEB4")
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# ROW 2 — SUSTAINABILITY + DISEASE RISK + IRRIGATION
-# ─────────────────────────────────────────────────────────────────────────────
-
-st.markdown("---")
-c_sus, c_dis, c_irr = st.columns([1.2, 1.2, 1.2])
-
-# ── SUSTAINABILITY SCORE
-with c_sus:
-    st.markdown('<p class="section-header">♻️ Sustainability Score</p>', unsafe_allow_html=True)
-    gc = sus_data["grade_color"]
-    st.markdown(
-        f'<div class="glass-card" style="text-align:center">'
-        f'<span class="grade-badge" style="color:{gc}">{sus_data["grade"]}</span><br>'
-        f'<div style="font-family:Orbitron;font-size:2.2rem;color:{gc};margin:0.4rem 0">'
-        f'{sus_data["total"]}<span style="font-size:1rem;">/100</span></div>'
-        f'</div>', unsafe_allow_html=True)
-
-    html_bars = ""
-    metrics = [
-        ("Water Efficiency",    sus_data["water_efficiency"],     "#00A8FF"),
-        ("Energy Efficiency",   sus_data["energy_efficiency"],    "#7C3AED"),
-        ("Climate Control",     sus_data["climate_optimization"], "#00DEB4"),
-        ("Disease Prevention",  sus_data["disease_prevention"],   "#7FFF00"),
-        ("Yield Potential",     sus_data["yield_potential"],      "#FFD700"),
-    ]
-    for lbl, val, clr in metrics:
-        html_bars += progress_html(lbl, val, clr)
-    st.markdown(f'<div class="glass-card">{html_bars}</div>', unsafe_allow_html=True)
-
-# ── DISEASE RISK
-with c_dis:
-    st.markdown('<p class="section-header">🦠 Disease Risk Analysis</p>', unsafe_allow_html=True)
-    dlc = dis_data["level_color"]
-    st.markdown(
-        f'<div class="glass-card" style="text-align:center">'
-        f'<span class="risk-badge" style="background:{dlc}22;color:{dlc};border:1px solid {dlc};">'
-        f'{dis_data["level"].upper()}</span><br>'
-        f'<div style="font-family:Orbitron;font-size:2.4rem;color:{dlc};margin:0.4rem 0">'
-        f'{dis_data["overall"]:.1f}<span style="font-size:1rem;">%</span></div>'
-        f'<div style="font-size:0.75rem;color:rgba(226,248,244,0.5);">Overall Risk Index</div>'
-        f'</div>', unsafe_allow_html=True)
-
-    disease_html = ""
-    d_colors = ["#EF4444", "#F59E0B", "#7C3AED", "#00A8FF"]
-    for i, (name, val) in enumerate(dis_data["diseases"].items()):
-        clr = d_colors[i % len(d_colors)]
-        disease_html += progress_html(name, val, clr)
-    st.markdown(f'<div class="glass-card">{disease_html}</div>', unsafe_allow_html=True)
-
-# ── IRRIGATION
-with c_irr:
-    st.markdown('<p class="section-header">💦 Irrigation Intelligence</p>', unsafe_allow_html=True)
-    isc = irr_data["status_color"]
-    st.markdown(
-        f'<div class="glass-card" style="text-align:center">'
-        f'<span class="status-pill" style="background:{isc}22;color:{isc};border:1px solid {isc};">'
-        f'{irr_data["status"].upper()}</span><br>'
-        f'<div style="font-family:Orbitron;font-size:2.2rem;color:{isc};margin:0.4rem 0">'
-        f'{irr_data["urgency"]:.1f}<span style="font-size:1rem;">%</span></div>'
-        f'<div style="font-size:0.75rem;color:rgba(226,248,244,0.5);">Urgency Index</div>'
-        f'</div>', unsafe_allow_html=True)
-
-    st.markdown(
-        f'<div class="glass-card">'
-        + progress_html("Irrigation Urgency", irr_data["urgency"], isc)
-        + f'<div style="margin-top:0.8rem;font-size:0.85rem;">'
-        f'📦 Volume Required: <b style="color:{isc}">{irr_data["volume_liters"]:.2f} L/m²</b><br>'
-        f'⏰ Next Irrigation: <b style="color:{isc}">{irr_data["next_irrigation_hours"]}h</b><br>'
-        f'🌿 ET₀ Rate: <b style="color:{isc}">{irr_data["evapotranspiration"]:.3f} mm/hr</b>'
-        f'</div></div>', unsafe_allow_html=True)
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# ROW 3 — CHARTS
-# ─────────────────────────────────────────────────────────────────────────────
-
-st.markdown("---")
-ch1, ch2, ch3 = st.columns(3)
-
-# ── CLIMATE TREND BAR CHART
-with ch1:
-    st.markdown('<p class="section-header">📊 24h Climate Trend</p>', unsafe_allow_html=True)
-    trend = generate_trend_data(temperature, humidity, 24)
-    fig_trend = go.Figure()
-    fig_trend.add_trace(go.Scatter(
-        x=trend["times"], y=trend["temperatures"], name="Temp °C",
-        line=dict(color="#FF6B6B", width=2), fill="tozeroy",
-        fillcolor="rgba(255,107,107,0.08)"))
-    fig_trend.add_trace(go.Scatter(
-        x=trend["times"], y=trend["humidities"], name="Humidity %",
-        line=dict(color="#00A8FF", width=2), fill="tozeroy",
-        fillcolor="rgba(0,168,255,0.06)"))
-    fig_trend.add_trace(go.Scatter(
-        x=trend["times"], y=trend["soil_moisture"], name="Soil %",
-        line=dict(color="#7FFF00", width=2, dash="dot")))
-    fig_trend.update_layout(**PLOTLY_LAYOUT, height=280,
-                             xaxis=dict(tickangle=45, nticks=8))
-    plotly_dark_axes(fig_trend)
-    st.plotly_chart(fig_trend, use_container_width=True, config={"displayModeBar": False})
-
-# ── RADAR CHART
-with ch2:
-    st.markdown('<p class="section-header">🎯 Risk Radar</p>', unsafe_allow_html=True)
-    radar_cats = ["Disease Risk", "Heat Stress", "Water Stress",
-                   "CO₂ Deficit", "Ventilation Risk", "Yield Risk"]
-    heat_pct   = min(100, max(0, (heat_data["heat_index"] - 20) * 2))
-    water_str  = max(0, 100 - sus_data["water_efficiency"])
-    co2_def    = max(0, (900 - co2_level) / 9)
-    vent_risk  = max(0, 100 - ventilation_rate)
-    yield_risk = max(0, 100 - sus_data["yield_potential"])
-    vals = [dis_data["overall"], heat_pct, water_str,
-            co2_def, vent_risk, yield_risk]
-    fig_radar = go.Figure(go.Scatterpolar(
-        r=vals + [vals[0]], theta=radar_cats + [radar_cats[0]],
-        fill="toself",
-        fillcolor="rgba(239,68,68,0.15)",
-        line=dict(color="#EF4444", width=2),
-        name="Risk Levels"))
-    fig_radar.update_layout(**PLOTLY_LAYOUT, height=280,
-        polar=dict(
-            bgcolor="rgba(0,0,0,0)",
-            radialaxis=dict(range=[0,100], gridcolor="rgba(255,255,255,0.1)",
-                            tickfont=dict(size=9, color="#E2F8F4"), showline=False),
-            angularaxis=dict(gridcolor="rgba(255,255,255,0.1)",
-                             tickfont=dict(size=10, color="#E2F8F4"))))
-    st.plotly_chart(fig_radar, use_container_width=True, config={"displayModeBar": False})
-
-# ── SUSTAINABILITY PIE
-with ch3:
-    st.markdown('<p class="section-header">🥧 Sustainability Breakdown</p>', unsafe_allow_html=True)
-    pie_labels = ["Water", "Energy", "Climate", "Disease Prev.", "Yield"]
-    pie_values = [sus_data["water_efficiency"], sus_data["energy_efficiency"],
-                   sus_data["climate_optimization"], sus_data["disease_prevention"],
-                   sus_data["yield_potential"]]
-    pie_colors = ["#00A8FF", "#7C3AED", "#00DEB4", "#7FFF00", "#FFD700"]
-    fig_pie = go.Figure(go.Pie(
-        labels=pie_labels, values=pie_values, hole=0.55,
-        marker=dict(colors=pie_colors, line=dict(color="#020C14", width=2)),
-        textfont=dict(size=11)))
-    fig_pie.add_annotation(text=f"<b>{sus_data['total']}</b>",
-        x=0.5, y=0.5, font=dict(size=26, color="#00DEB4", family="Orbitron"),
-        showarrow=False)
-    fig_pie.update_layout(**PLOTLY_LAYOUT)
-    fig_pie.update_layout(height=280, showlegend=True)
-    st.plotly_chart(fig_pie, use_container_width=True, config={"displayModeBar": False})
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# ROW 4 — HEATMAPS
-# ─────────────────────────────────────────────────────────────────────────────
-
-st.markdown("---")
-hm1, hm2 = st.columns(2)
-temp_grid, hum_grid = generate_zone_heatmap_data(temperature, humidity)
-zone_labels = [["Z-A1","Z-A2","Z-A3","Z-A4"],
-               ["Z-B1","Z-B2","Z-B3","Z-B4"],
-               ["Z-C1","Z-C2","Z-C3","Z-C4"]]
-
-with hm1:
-    st.markdown('<p class="section-header">🌡 Zone Temperature Heatmap</p>', unsafe_allow_html=True)
-    fig_ht = go.Figure(go.Heatmap(
-        z=temp_grid, text=[[f"{v:.1f}°C" for v in row] for row in temp_grid],
-        texttemplate="%{text}", colorscale="RdYlGn_r",
-        colorbar=dict(title="°C", tickfont=dict(color="#E2F8F4")),
-        showscale=True))
-    fig_ht.update_layout(**PLOTLY_LAYOUT, height=260)
-    st.plotly_chart(fig_ht, use_container_width=True, config={"displayModeBar": False})
-
-with hm2:
-    st.markdown('<p class="section-header">💧 Zone Humidity Heatmap</p>', unsafe_allow_html=True)
-    fig_hh = go.Figure(go.Heatmap(
-        z=hum_grid, text=[[f"{v:.1f}%" for v in row] for row in hum_grid],
-        texttemplate="%{text}", colorscale="Blues",
-        colorbar=dict(title="%", tickfont=dict(color="#E2F8F4")),
-        showscale=True))
-    fig_hh.update_layout(**PLOTLY_LAYOUT, height=260)
-    st.plotly_chart(fig_hh, use_container_width=True, config={"displayModeBar": False})
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# ROW 5 — AI RECOMMENDATION PANEL
-# ─────────────────────────────────────────────────────────────────────────────
-
-st.markdown("---")
-st.markdown('<p class="section-header">🤖 AI Prediction & Recommendation Engine</p>',
-            unsafe_allow_html=True)
-
-ai_res = st.session_state.get("ai_result")
-
-if not ai_res:
-    st.markdown(
-        '<div class="glass-card" style="text-align:center;padding:2rem;">'
-        '<div style="font-size:2.5rem">⚡</div>'
-        '<div style="font-family:Orbitron;color:#00DEB4;margin:0.5rem 0;">AI Engine Ready</div>'
-        '<div style="color:rgba(226,248,244,0.5);font-size:0.85rem;">'
-        'Click <b>Run AI Analysis</b> in the sidebar to generate intelligent predictions.</div>'
-        '</div>', unsafe_allow_html=True)
-else:
-    src_col, _ = st.columns([2, 3])
-    with src_col:
-        st.markdown(f'<span class="engine-pill">Source: {ai_res.get("source","AI Engine")}</span>',
-                    unsafe_allow_html=True)
-
-    ai_c1, ai_c2 = st.columns(2)
-    with ai_c1:
-        st.markdown(
-            f'<div class="ai-card"><h4>🦠 Disease Warning</h4>'
-            f'<p>{ai_res.get("disease_warning","—")}</p></div>',
-            unsafe_allow_html=True)
-        st.markdown(
-            f'<div class="ai-card"><h4>🌡 Climate Warning</h4>'
-            f'<p>{ai_res.get("climate_warning","—")}</p></div>',
-            unsafe_allow_html=True)
-    with ai_c2:
-        st.markdown(
-            f'<div class="ai-card"><h4>💦 Irrigation Advice</h4>'
-            f'<p>{ai_res.get("irrigation_advice","—")}</p></div>',
-            unsafe_allow_html=True)
-        st.markdown(
-            f'<div class="ai-card"><h4>♻️ Sustainability Insight</h4>'
-            f'<p>{ai_res.get("sustainability_insight","—")}</p></div>',
-            unsafe_allow_html=True)
-
-    st.markdown('<p style="font-family:Orbitron;font-size:0.8rem;color:#00DEB4;'
-                'letter-spacing:0.1em;margin-top:0.8rem;">⚡ PRIORITY ACTIONS</p>',
-                unsafe_allow_html=True)
-    for i, action in enumerate(ai_res.get("top_actions", []), 1):
-        st.markdown(f'<div class="action-item">{"🔴" if i==1 else "🟡" if i==2 else "🟢"} '
-                    f'<b>#{i}</b> — {action}</div>', unsafe_allow_html=True)
-
-    st.markdown(
-        f'<div class="glass-card" style="margin-top:0.5rem">'
-        f'<b style="color:#00DEB4;font-family:Orbitron;font-size:0.75rem;">'
-        f'📋 OVERALL ASSESSMENT</b><br><br>'
-        f'<span style="font-size:0.92rem;line-height:1.7">{ai_res.get("overall_assessment","—")}</span>'
+        f'<div style="font-size:1.3rem">🏆</div>'
+        f'<div class="metric-value" style="color:{gc};">{perf_data["overall"]:.1f}</div>'
+        f'<div class="metric-label">Overall Score · Grade <b style="color:{gc}">{perf_data["grade"]}</b></div>'
         f'</div>', unsafe_allow_html=True)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# ROW 6 — PERFORMANCE EVALUATION
-# ─────────────────────────────────────────────────────────────────────────────
+# =============================================================================
+# TAB 2: AI AGRI-ASSISTANT (CHATBOT)
+# =============================================================================
 
-st.markdown("---")
-st.markdown('<p class="section-header">📊 System Performance Evaluation</p>',
-            unsafe_allow_html=True)
+with tab_chat:
+    st.markdown('<p class="section-header">💬 AI Agri-Assistant</p>', unsafe_allow_html=True)
+    st.markdown(f"Ask any questions related to agriculture, greenhouse management, or specifically about your **{crop_type}**.")
 
-p1, p2, p3, p4 = st.columns(4)
+    if not API_KEY:
+        st.warning("⚠️ Google Gemini API Key is required for the Chatbot. Please add it to your Streamlit Secrets.")
+    else:
+        if "messages" not in st.session_state:
+            st.session_state.messages = []
 
-def perf_card(col, icon, label, val, color):
-    col.markdown(
-        f'<div class="metric-tile">'
-        f'<div style="font-size:1.3rem">{icon}</div>'
-        f'<div class="metric-value" style="color:{color};">{val:.1f}</div>'
-        f'<div class="metric-label">{label}</div>'
-        f'</div>', unsafe_allow_html=True)
+        # Display chat messages
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
 
-gc = perf_data["grade_color"]
-perf_card(p1, "🎯", "Prediction Accuracy",    perf_data["prediction_accuracy"],    "#00A8FF")
-perf_card(p2, "⚙️", "System Efficiency",      perf_data["system_efficiency"],      "#7C3AED")
-perf_card(p3, "🏡", "Greenhouse Performance", perf_data["greenhouse_performance"], "#00DEB4")
-p4.markdown(
-    f'<div class="metric-tile">'
-    f'<div style="font-size:1.3rem">🏆</div>'
-    f'<div class="metric-value" style="color:{gc};">{perf_data["overall"]:.1f}</div>'
-    f'<div class="metric-label">Overall Score · Grade <b style="color:{gc}">{perf_data["grade"]}</b></div>'
-    f'</div>', unsafe_allow_html=True)
+        # Chat input
+        if prompt := st.chat_input(f"Ask about managing {crop_type}..."):
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            with st.chat_message("user"):
+                st.markdown(prompt)
 
-# Performance bar chart
-fig_perf = go.Figure(go.Bar(
-    x=["Prediction Accuracy", "System Efficiency",
-       "Greenhouse Performance", "Overall Score"],
-    y=[perf_data["prediction_accuracy"], perf_data["system_efficiency"],
-       perf_data["greenhouse_performance"], perf_data["overall"]],
-    marker_color=["#00A8FF", "#7C3AED", "#00DEB4", gc],
-    text=[f'{v:.1f}' for v in [perf_data["prediction_accuracy"],
-          perf_data["system_efficiency"], perf_data["greenhouse_performance"],
-          perf_data["overall"]]],
-    textposition="outside",
-    marker_line=dict(width=0)))
-fig_perf.update_layout(**PLOTLY_LAYOUT, height=280,
-                        yaxis=dict(range=[0, 115]))
-plotly_dark_axes(fig_perf)
-st.plotly_chart(fig_perf, use_container_width=True, config={"displayModeBar": False})
+            with st.chat_message("assistant"):
+                with st.spinner("Thinking..."):
+                    try:
+                        model = genai.GenerativeModel('gemini-1.5-flash')
+                        sys_prompt = f"You are an expert agricultural AI assistant. The user is currently growing {crop_type} at {growth_stage} stage. Give detailed, highly accurate, and practical advice."
+                        response = model.generate_content(sys_prompt + "\n\nUser Question: " + prompt)
+                        st.markdown(response.text)
+                        st.session_state.messages.append({"role": "assistant", "content": response.text})
+                    except Exception as e:
+                        st.error(f"Failed to generate response. Error: {e}")
+
+
+# =============================================================================
+# TAB 3: DISEASE VISION SCANNER
+# =============================================================================
+
+with tab_vision:
+    st.markdown('<p class="section-header">📸 AI Disease Vision Scanner</p>', unsafe_allow_html=True)
+    st.markdown("Upload a photo of a leaf or plant, and the AI will analyze it to detect diseases and provide treatment recommendations.")
+
+    if not API_KEY:
+        st.warning("⚠️ Google Gemini API Key is required for the Vision Bot. Please add it to your Streamlit Secrets.")
+    else:
+        scan_col1, scan_col2 = st.columns([1, 1])
+        
+        with scan_col1:
+            uploaded_file = st.file_uploader("Upload an image...", type=["jpg", "jpeg", "png"])
+            camera_file = st.camera_input("...or take a picture")
+            
+            img_file = uploaded_file or camera_file
+            
+            if img_file is not None:
+                image = Image.open(img_file)
+                st.image(image, caption="Uploaded Image", use_column_width=True)
+
+        with scan_col2:
+            if img_file is not None:
+                if st.button("🔍 Scan for Diseases", type="primary", use_container_width=True):
+                    with st.spinner("AI is scanning the image for pathogens and deficiencies..."):
+                        try:
+                            vision_model = genai.GenerativeModel('gemini-1.5-flash')
+                            vision_prompt = f"You are an expert plant pathologist. The user is growing {crop_type}. Look at this image and identify any diseases, pests, or nutrient deficiencies. Provide the name of the disease, the severity, and a detailed 3-step actionable recommendation to treat it. If the plant looks healthy, confirm that it is healthy."
+                            
+                            response = vision_model.generate_content([vision_prompt, image])
+                            
+                            st.markdown(
+                                f'<div class="glass-card">'
+                                f'<b style="color:#00DEB4;font-family:Orbitron;font-size:0.9rem;">'
+                                f'🔬 SCAN RESULTS</b><br><br>'
+                                f'<span style="font-size:0.95rem;line-height:1.7">{response.text}</span>'
+                                f'</div>', unsafe_allow_html=True)
+                        except Exception as e:
+                            st.error(f"Image analysis failed. Error: {e}")
+            else:
+                st.info("Waiting for an image to analyze...")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
