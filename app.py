@@ -1186,7 +1186,12 @@ with tab_finance:
         marker_line_color="rgba(0,0,0,0.4)", marker_line_width=1,
         text=[f"Rs.{v:,.0f}" for v in vals], textposition="auto",
         textfont=dict(family="Share Tech Mono", size=11, color="#030B07")))
-    fig_bar.update_layout(**PLOTLY_LAYOUT, height=280, showlegend=False)
+    
+    # ── FIXED CODE SECTION ───────────────────────────────────────────────────
+    fig_bar.update_layout(**PLOTLY_LAYOUT)
+    fig_bar.update_layout(height=280, showlegend=False)
+    # ─────────────────────────────────────────────────────────────────────────
+
     plotly_dark_axes(fig_bar)
     st.plotly_chart(fig_bar, use_container_width=True, config={"displayModeBar":False})
 
