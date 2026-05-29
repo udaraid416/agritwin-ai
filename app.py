@@ -540,9 +540,9 @@ with ch3:
     fig_pie.add_annotation(text=f"<b>{sus_data['total']}</b>",
         x=0.5, y=0.5, font=dict(size=26, color="#00DEB4", family="Orbitron"),
         showarrow=False)
-    ```python
-   fig_pie.update_layout(**PLOTLY_LAYOUT)
-   fig_pie.update_layout(height=280, showlegend=True)
+   ```python
+fig_pie.update_layout(**PLOTLY_LAYOUT)
+fig_pie.update_layout(height=280, showlegend=True)
     st.plotly_chart(fig_pie, use_container_width=True, config={"displayModeBar": False})
 
 
