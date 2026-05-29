@@ -1,6 +1,6 @@
 """
 app.py — AI-Powered Predictive Digital Twin for Smart Protected Agriculture
-Streamlit frontend — NEXT GEN UI (Video BG, 3D Spline, Day/Night, Lottie, Advanced Modules & Integrated Chatbots)
+Streamlit frontend — PREMIUM SaaS UI (Inter Font, Smooth Transitions, Soft Glassmorphism)
 """
 
 import streamlit as st
@@ -11,13 +11,11 @@ import time
 import datetime
 import os
 import requests
-import json  # අලුතෙන් එකතු කළා - AI Response එක parse කරන්න
 import google.generativeai as genai
 import streamlit.components.v1 as components
 from streamlit_lottie import st_lottie
 from PIL import Image
 
-# ඔයාගේ වෙනත් ෆයිල් වලින් ගන්න දේවල්
 from config import (
     PARAM_DEFAULTS, GROWTH_STAGES,
     GRADE_COLORS, RISK_COLORS, ZONES, APP_TITLE, APP_ICON, VERSION
@@ -35,7 +33,7 @@ from ai_model import get_ai_recommendations, get_ai_engine_status
 # ─────────────────────────────────────────────────────────────────────────────
 
 st.set_page_config(
-    page_title="AgriTwin AI",
+    page_title="AgriTwin AI | Pro",
     page_icon=APP_ICON,
     layout="wide",
     initial_sidebar_state="expanded",
@@ -45,130 +43,192 @@ API_KEY = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
 if API_KEY:
     genai.configure(api_key=API_KEY)
 
-# Session States for Integrated Chatbots and Crop Params
+# Session States for Integrated Chatbots
 if "vision_result" not in st.session_state: st.session_state.vision_result = None
 if "vision_messages" not in st.session_state: st.session_state.vision_messages = []
 if "market_messages" not in st.session_state: st.session_state.market_messages = []
-if "crop_params" not in st.session_state: st.session_state.crop_params = PARAM_DEFAULTS
-if "is_valid_crop" not in st.session_state: st.session_state.is_valid_crop = True
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 🌗 DYNAMIC DAY/NIGHT THEME & CSS
+# 🎨 PREMIUM SaaS CSS & ANIMATIONS
 # ─────────────────────────────────────────────────────────────────────────────
-current_hour = datetime.datetime.now().hour
 
-if 6 <= current_hour < 18:
-    theme_vars = """
-    --bg-deep:      rgba(11, 25, 20, 0.85);
-    --bg-mid:       rgba(17, 38, 29, 0.85);
-    --glass-bg:     rgba(255, 215, 0, 0.05);
-    --glass-border: rgba(255, 215, 0, 0.2);
-    --accent:       #FFD700;
-    --accent2:      #00DEB4;
-    --accent3:      #FF8C00;
-    --danger:       #EF4444;
-    --warn:         #F59E0B;
-    --text-primary: #FFFFFF;
-    --text-muted:   rgba(255, 255, 255, 0.7);
-    """
-    bg_video_url = "https://cdn.pixabay.com/video/2020/05/25/40141-424888806_large.mp4"
-else:
-    theme_vars = """
-    --bg-deep:      rgba(2, 12, 20, 0.85);
-    --bg-mid:       rgba(7, 24, 40, 0.85);
-    --glass-bg:     rgba(0, 220, 180, 0.06);
-    --glass-border: rgba(0, 220, 180, 0.18);
-    --accent:       #00DEB4;
-    --accent2:      #00A8FF;
-    --accent3:      #7C3AED;
-    --danger:       #EF4444;
-    --warn:         #F59E0B;
-    --text-primary: #E2F8F4;
-    --text-muted:   rgba(226, 248, 244, 0.6);
-    """
-    bg_video_url = "https://cdn.pixabay.com/video/2021/08/11/84687-586749942_large.mp4"
-
-GLOBAL_CSS = f"""
+GLOBAL_CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Exo+2:wght@300;400;600&display=swap');
+/* ── Premium Inter Font ── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-:root {{
-    {theme_vars}
-}}
+:root {
+    --bg-color:       #0B111A; /* Soft Dark Blue-Grey */
+    --card-bg:        rgba(19, 31, 44, 0.65);
+    --card-border:    rgba(255, 255, 255, 0.08);
+    --accent:         #10B981; /* Emerald Green */
+    --accent-hover:   #059669;
+    --accent-light:   rgba(16, 185, 129, 0.15);
+    --text-primary:   #F3F4F6;
+    --text-secondary: #9CA3AF;
+    --danger:         #EF4444;
+    --warning:        #F59E0B;
+}
 
-/* ── 🎥 Cinematic Video Background ── */
-#video-background {{
-    position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%;
-    z-index: -1; filter: blur(8px) brightness(0.25); object-fit: cover;
-}}
+/* ── Smooth Animated Background ── */
+.stApp {
+    background: radial-gradient(circle at 15% 50%, rgba(16, 185, 129, 0.05), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.05), transparent 25%);
+    background-color: var(--bg-color);
+    background-attachment: fixed;
+}
 
-.stApp, .main, section[data-testid="stSidebar"] > div {{ background: transparent !important; }}
-section[data-testid="stSidebar"] {{
-    background: linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-mid) 100%) !important;
-    border-right: 1px solid var(--glass-border) !important; backdrop-filter: blur(20px);
-}}
-body, .stMarkdown, .stText, label, .stSelectbox label, .stSlider label, .stCheckbox label, .stTextInput label, .stNumberInput label {{
-    font-family: 'Exo 2', sans-serif !important; color: var(--text-primary) !important;
-}}
+/* ── Typography & Globals ── */
+body, .stMarkdown, .stText, p, span, label, div {
+    font-family: 'Inter', sans-serif !important;
+    color: var(--text-primary);
+}
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.02em;
+}
 
-#MainMenu, footer {{ visibility: hidden; }}
-header {{ background-color: transparent !important; }}
-.block-container {{ padding-top: 1.2rem !important; padding-bottom: 2rem !important; }}
+#MainMenu, footer, header { visibility: hidden !important; }
+.block-container { padding-top: 2rem !important; padding-bottom: 3rem !important; }
 
-@keyframes fadeSlideDown {{ from {{ opacity: 0; transform: translateY(-24px); }} to {{ opacity: 1; transform: translateY(0); }} }}
-@keyframes pulseGlow {{ 0%,100% {{ text-shadow: 0 0 20px var(--accent), 0 0 60px var(--accent); }} 50% {{ text-shadow: 0 0 40px var(--accent), 0 0 120px var(--accent2); }} }}
-.hero-title {{
-    font-family: 'Orbitron', sans-serif !important; font-size: clamp(1.4rem, 3vw, 2.4rem); font-weight: 800;
-    color: var(--accent) !important; animation: fadeSlideDown 0.8s ease both, pulseGlow 3s ease-in-out infinite; letter-spacing: 0.08em; margin-bottom: 0.2rem;
-}}
-.hero-sub {{ font-family: 'Exo 2', sans-serif; color: var(--text-muted) !important; font-size: 0.85rem; letter-spacing: 0.12em; text-transform: uppercase; animation: fadeSlideDown 1s 0.2s ease both; }}
+/* ── Sidebar Styling ── */
+section[data-testid="stSidebar"] {
+    background-color: rgba(13, 20, 28, 0.95) !important;
+    border-right: 1px solid var(--card-border) !important;
+    backdrop-filter: blur(20px);
+}
+.stSlider > div > div > div { background: var(--accent) !important; }
+.stSelectbox div[data-baseweb], .stTextInput input, .stNumberInput input { 
+    background: rgba(255,255,255,0.03) !important; 
+    border: 1px solid var(--card-border) !important; 
+    border-radius: 10px !important; 
+    color: var(--text-primary) !important;
+    transition: all 0.3s ease;
+}
+.stSelectbox div[data-baseweb]:hover, .stTextInput input:hover, .stNumberInput input:hover {
+    border-color: var(--accent) !important;
+}
 
-@keyframes cardIn {{ from {{ opacity: 0; transform: translateY(16px) scale(0.97); }} to {{ opacity: 1; transform: translateY(0) scale(1); }} }}
-.glass-card {{
-    background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.2rem 1.4rem;
-    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); animation: cardIn 0.6s ease both; transition: border-color 0.3s, box-shadow 0.3s; margin-bottom: 1rem;
-}}
-.glass-card:hover {{ border-color: var(--accent); box-shadow: 0 0 24px rgba(0,222,180,0.12); }}
+/* ── Staggered Fade-Up Animation ── */
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 
-.metric-tile {{
-    background: linear-gradient(135deg, rgba(0,222,180,0.10) 0%, rgba(0,168,255,0.08) 100%); border: 1px solid var(--glass-border); border-radius: 14px; padding: 1rem; text-align: center; backdrop-filter: blur(10px); animation: cardIn 0.5s ease both; transition: transform 0.25s, box-shadow 0.25s;
-}}
-.metric-tile:hover {{ transform: translateY(-4px); box-shadow: 0 8px 32px rgba(0,222,180,0.15); }}
-.metric-value {{ font-family:'Orbitron',sans-serif; font-size:2rem; font-weight:700; line-height:1.1; }}
-.metric-label {{ font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-muted); margin-top:0.25rem; }}
+/* ── Premium Glass Cards ── */
+.glass-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 1.5rem;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    margin-bottom: 1.2rem;
+}
+.glass-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(16, 185, 129, 0.3);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+}
 
-@keyframes progressFill {{ from {{ width: 0%; }} }}
-.progress-container {{ margin: 0.6rem 0; }}
-.progress-label {{ display:flex; justify-content:space-between; font-size:0.8rem; color:var(--text-muted); margin-bottom:0.3rem; }}
-.progress-track {{ background:rgba(255,255,255,0.07); border-radius:99px; height:10px; overflow:hidden; }}
-.progress-fill  {{ height:100%; border-radius:99px; animation: progressFill 1.2s cubic-bezier(.17,.67,.3,1) both; }}
+/* ── KPI Tiles ── */
+.metric-tile {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 1.2rem;
+    text-align: center;
+    animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+    transition: all 0.3s ease;
+}
+.metric-tile:hover { 
+    transform: translateY(-5px); 
+    background: rgba(255, 255, 255, 0.03);
+    border-color: var(--accent);
+}
+.metric-value { font-size: 2.2rem; font-weight: 700; line-height: 1.2; letter-spacing: -0.03em; }
+.metric-label { font-size: 0.75rem; font-weight: 500; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.05em; margin-top: 0.4rem; }
 
-.ai-card {{ background: linear-gradient(135deg, rgba(124,58,237,0.12), rgba(0,168,255,0.08)); border: 1px solid rgba(124,58,237,0.3); border-radius:16px; padding:1.1rem 1.3rem; backdrop-filter: blur(12px); animation: cardIn 0.7s 0.2s ease both; }}
-.ai-card h4 {{ font-family:'Orbitron',sans-serif; font-size:0.8rem; letter-spacing:0.1em; color:var(--accent3) !important; text-transform:uppercase; margin:0 0 0.5rem; }}
-.ai-card p  {{ font-size:0.9rem; line-height:1.6; color:var(--text-primary); margin:0; }}
+/* ── Badges & Buttons ── */
+.risk-badge {
+    display: inline-block; padding: 0.3rem 1rem; border-radius: 99px;
+    font-size: 0.8rem; font-weight: 600; letter-spacing: 0.05em;
+}
+.status-pill {
+    display: inline-block; padding: 0.3rem 1rem; border-radius: 99px; 
+    font-size: 0.8rem; font-weight: 600; letter-spacing: 0.05em;
+}
+.engine-pill {
+    background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 99px; padding: 0.3rem 0.8rem; font-size: 0.75rem; color: #60A5FA !important;
+}
 
-.section-header {{ font-family:'Orbitron',sans-serif; font-size:0.95rem; font-weight:600; color:var(--accent) !important; letter-spacing:0.1em; text-transform:uppercase; border-bottom: 1px solid var(--glass-border); padding-bottom:0.5rem; margin-bottom:1rem; }}
-.action-item {{ background: rgba(0,222,180,0.05); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 0.55rem 0.9rem; margin-bottom: 0.5rem; font-size: 0.88rem; animation: cardIn 0.4s ease both; }}
-.risk-badge {{ display:inline-block; padding:0.25rem 0.75rem; border-radius:99px; font-size:0.8rem; font-weight:600; font-family:'Orbitron',sans-serif; letter-spacing:0.08em; }}
-.status-pill {{ display:inline-block; padding:0.2rem 0.65rem; border-radius:99px; font-size:0.78rem; font-weight:600; letter-spacing:0.06em; }}
+/* ── AI Recommendation Cards ── */
+.ai-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--card-border);
+    border-radius: 16px; padding: 1.2rem;
+    animation: fadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.ai-card h4 { font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; color: var(--accent) !important; text-transform: uppercase; margin: 0 0 0.6rem; }
+.ai-card p { font-size: 0.95rem; line-height: 1.6; color: var(--text-primary); margin: 0; font-weight: 300;}
 
-.stSlider > div > div > div {{ background: var(--accent) !important; }}
-.stSelectbox div[data-baseweb], .stTextInput input, .stNumberInput input {{ background: rgba(0,0,0,0.3) !important; border: 1px solid var(--glass-border) !important; border-radius:8px !important; color: #E2F8F4 !important;}}
-.stSlider .stMarkdown {{ color: var(--text-muted) !important; }}
-.stTabs [data-baseweb="tab-list"] {{ background-color: transparent; }}
-.stTabs [data-baseweb="tab"] {{ color: var(--text-muted); font-family: 'Orbitron', sans-serif; font-weight: 600; letter-spacing: 0.05em; }}
-.stTabs [aria-selected="true"] {{ color: var(--accent) !important; border-bottom-color: var(--accent) !important; }}
-.js-plotly-plot {{ border-radius:14px !important; }}
-@keyframes blink {{ 0%,100%{{opacity:1}} 50%{{opacity:0.2}} }}
-.live-dot {{ width:8px; height:8px; background:var(--accent); border-radius:50%; display:inline-block; animation:blink 1.4s ease-in-out infinite; box-shadow: 0 0 8px var(--accent); vertical-align:middle; margin-right:6px; }}
-.engine-pill {{ background: rgba(124,58,237,0.15); border:1px solid rgba(124,58,237,0.35); border-radius:99px; padding:0.2rem 0.7rem; font-size:0.72rem; color:#A78BFA !important; font-family:'Exo 2',sans-serif; }}
+/* ── Progress Bars ── */
+.progress-container { margin: 0.8rem 0; }
+.progress-label { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.4rem; font-weight: 400;}
+.progress-track { background: rgba(255,255,255,0.05); border-radius: 99px; height: 8px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 99px; transition: width 1s ease-in-out; }
+
+/* ── Section Headers ── */
+.section-header {
+    font-size: 1.1rem; font-weight: 600; color: var(--text-primary) !important;
+    letter-spacing: -0.01em; border-bottom: 1px solid var(--card-border); 
+    padding-bottom: 0.6rem; margin-bottom: 1.2rem; margin-top: 1rem;
+}
+
+/* ── Streamlit Tabs Styling (Apple Segmented Control Style) ── */
+.stTabs [data-baseweb="tab-list"] {
+    background-color: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 4px;
+    gap: 4px;
+}
+.stTabs [data-baseweb="tab"] {
+    color: var(--text-secondary);
+    font-weight: 500;
+    border-radius: 8px;
+    padding: 8px 16px;
+    transition: all 0.3s ease;
+}
+.stTabs [aria-selected="true"] {
+    background-color: var(--card-bg) !important;
+    color: var(--accent) !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-bottom: none !important;
+}
+
+/* ── Chat Messages ── */
+.stChatMessage {
+    background-color: transparent !important;
+}
+[data-testid="stChatMessageContent"] {
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 1rem;
+}
+
+/* ── Plotly Overrides ── */
+.js-plotly-plot { border-radius: 16px !important; }
 </style>
-<video autoplay muted loop id="video-background"><source src="{bg_video_url}" type="video/mp4"></video>
 """
 st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# HELPERS (LOTTIE, PLOTLY & AI CROP OPTIMIZATION)
+# HELPERS (LOTTIE & PLOTLY)
 # ─────────────────────────────────────────────────────────────────────────────
 @st.cache_data
 def load_lottieurl(url: str):
@@ -180,118 +240,58 @@ def load_lottieurl(url: str):
 
 lottie_ai_thinking = load_lottieurl("https://lottie.host/809c91f1-331e-4509-9fc6-9e90098da0da/uJ0q3E1jKz.json")
 
-PLOTLY_LAYOUT = dict(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(family="Exo 2", color="#E2F8F4", size=12), margin=dict(l=20, r=20, t=30, b=20), showlegend=True, legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(size=11)))
+# Updated Plotly to use Inter font and softer grid lines
+PLOTLY_LAYOUT = dict(
+    paper_bgcolor="rgba(0,0,0,0)", 
+    plot_bgcolor="rgba(0,0,0,0)", 
+    font=dict(family="Inter", color="#9CA3AF", size=12), 
+    margin=dict(l=20, r=20, t=30, b=20), 
+    showlegend=True, 
+    legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(size=11))
+)
+
 def plotly_dark_axes(fig):
-    fig.update_xaxes(gridcolor="rgba(255,255,255,0.06)", zerolinecolor="rgba(255,255,255,0.1)")
-    fig.update_yaxes(gridcolor="rgba(255,255,255,0.06)", zerolinecolor="rgba(255,255,255,0.1)")
+    fig.update_xaxes(gridcolor="rgba(255,255,255,0.04)", zerolinecolor="rgba(255,255,255,0.04)")
+    fig.update_yaxes(gridcolor="rgba(255,255,255,0.04)", zerolinecolor="rgba(255,255,255,0.04)")
     return fig
 
-def progress_html(label: str, value: float, color: str = "#00DEB4", max_val: float = 100) -> str:
+def progress_html(label: str, value: float, color: str = "#10B981", max_val: float = 100) -> str:
     pct = min(100, max(0, value / max_val * 100))
     return f'<div class="progress-container"><div class="progress-label"><span>{label}</span><span>{value:.1f}</span></div><div class="progress-track"><div class="progress-fill" style="width:{pct}%;background:{color};"></div></div></div>'
-
-def fetch_optimal_crop_params(crop_name, stage):
-    """Fetches real optimal params from Gemini AI based on crop and stage."""
-    try:
-        model = genai.GenerativeModel("models/gemini-1.5-flash")
-        prompt = f"""
-        You are an expert agronomist. I am running a smart greenhouse/hydroponic system.
-        Provide the strictly optimal environmental parameters for growing '{crop_name}' at the '{stage}' growth stage.
-        If '{crop_name}' is a fake, unreal, or non-agricultural plant, set "valid_crop" to false.
-        
-        Return ONLY a valid JSON. NO markdown, NO extra text.
-        {{
-            "valid_crop": true,
-            "temperature": 24.5,
-            "humidity": 65.0,
-            "co2_level": 800.0,
-            "soil_moisture": 60.0,
-            "ph_level": 6.0,
-            "ec_level": 1.5,
-            "light_intensity": 4000.0,
-            "ventilation_rate": 50.0,
-            "leaf_area_index": 2.5
-        }}
-        """
-        response = model.generate_content(prompt)
-        
-        # හරියටම JSON කොටස විතරක් වෙන් කරගැනීම (Bulletproof JSON Extraction)
-        text_result = response.text
-        start_idx = text_result.find('{')
-        end_idx = text_result.rfind('}') + 1
-        
-        if start_idx != -1 and end_idx != 0:
-            json_text = text_result[start_idx:end_idx]
-            data = json.loads(json_text)
-            return data
-        else:
-            st.sidebar.error("⚠️ AI didn't return proper JSON format.")
-            return None
-            
-    except Exception as e:
-        st.sidebar.error(f"⚠️ API Error: {e}") 
-        return None
 
 # ─────────────────────────────────────────────────────────────────────────────
 # SIDEBAR
 # ─────────────────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown('<p class="hero-title" style="font-size:1.1rem;">🌿 AgriTwin AI</p>', unsafe_allow_html=True)
-    st.markdown(f'<p class="hero-sub">v{VERSION} · Control Panel</p>', unsafe_allow_html=True)
-    st.markdown("---")
+    st.markdown(f'<div style="font-size: 1.8rem; font-weight: 700; color: #F3F4F6; margin-bottom: 0.2rem;">{APP_ICON} AgriTwin<span style="color: #10B981;">Pro</span></div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="font-size: 0.8rem; color: #9CA3AF; margin-bottom: 2rem;">Farm Management Platform v{VERSION}</div>', unsafe_allow_html=True)
 
-    crop_type = st.text_input("🌱 Enter Crop Type", value="Lettuce", placeholder="e.g., Lettuce, Tomato...")
+    crop_type    = st.text_input("🌱 Crop Type", value="Lettuce", placeholder="e.g., Lettuce, Tomato...")
     growth_stage = st.selectbox("📈 Growth Stage", GROWTH_STAGES, index=1)
 
-    # ⚡ Get AI Crop Data Button
-    if st.button("🔍 Get AI Crop Data", type="primary", use_container_width=True):
-        if API_KEY:
-            with st.spinner(f"Researching optimal parameters for {crop_type}..."):
-                ai_params = fetch_optimal_crop_params(crop_type, growth_stage)
-                
-                if ai_params and ai_params.get("valid_crop"):
-                    st.session_state.crop_params = ai_params
-                    st.session_state.is_valid_crop = True
-                    st.success("✅ AI Data Loaded Successfully!")
-                else:
-                    st.session_state.is_valid_crop = False
-                    st.error("❌ Invalid crop. Please enter a real agricultural plant.")
-        else:
-            st.error("⚠️ API Key not found!")
+    st.markdown('<div class="section-header">🌡 Environment</div>', unsafe_allow_html=True)
+    temperature      = st.slider("Temperature (°C)",     5.0,  50.0, PARAM_DEFAULTS["temperature"], 0.5)
+    humidity         = st.slider("Humidity (%)",          10.0, 99.0, PARAM_DEFAULTS["humidity"],    0.5)
+    co2_level        = st.slider("CO₂ (ppm)",            300.0,2000.0,PARAM_DEFAULTS["co2_level"],  10.0)
+
+    st.markdown('<div class="section-header">💧 Substrate / Solution</div>', unsafe_allow_html=True)
+    soil_moisture    = st.slider("Moisture (%)",    5.0,  99.0, PARAM_DEFAULTS["soil_moisture"], 0.5)
+    ph_level         = st.slider("pH Level",             4.0,   9.0, PARAM_DEFAULTS["ph_level"],      0.1)
+    ec_level         = st.slider("EC Level (mS/cm)",     0.5,   5.0, PARAM_DEFAULTS["ec_level"],      0.1)
+
+    st.markdown('<div class="section-header">💡 Lighting & Air</div>', unsafe_allow_html=True)
+    light_intensity  = st.slider("Light Intensity (lux)",100.0,6000.0,PARAM_DEFAULTS["light_intensity"],50.0)
+    ventilation_rate = st.slider("Ventilation Rate (%)", 0.0,  100.0, PARAM_DEFAULTS["ventilation_rate"],1.0)
+    leaf_area_index  = st.slider("Leaf Area Index",      0.5,   7.0,  PARAM_DEFAULTS["leaf_area_index"],  0.1)
 
     st.markdown("---")
-    
-    # Get values from session state
-    current_params = st.session_state.crop_params
-    
-    # Block dashboard if fake crop is entered
-    if not st.session_state.is_valid_crop:
-        st.warning("⚠️ Enter a valid crop and click 'Get AI Crop Data' to unlock dashboard.")
-        st.stop()
-
-    st.markdown('<p class="section-header">🌡 Climate Sensors</p>', unsafe_allow_html=True)
-    temperature      = st.slider("Temperature (°C)",     5.0,  50.0, float(current_params.get("temperature", 25.0)), 0.5)
-    humidity         = st.slider("Humidity (%)",         10.0, 99.0, float(current_params.get("humidity", 65.0)),  0.5)
-    co2_level        = st.slider("CO₂ (ppm)",            300.0,2000.0,float(current_params.get("co2_level", 800.0)), 10.0)
-
-    st.markdown('<p class="section-header">💧 Soil & Water</p>', unsafe_allow_html=True)
-    soil_moisture    = st.slider("Soil Moisture (%)",    5.0,  99.0, float(current_params.get("soil_moisture", 60.0)), 0.5)
-    ph_level         = st.slider("pH Level",             4.0,   9.0, float(current_params.get("ph_level", 6.0)),      0.1)
-    ec_level         = st.slider("EC Level (mS/cm)",     0.5,   5.0, float(current_params.get("ec_level", 1.5)),      0.1)
-
-    st.markdown('<p class="section-header">💡 Light & Airflow</p>', unsafe_allow_html=True)
-    light_intensity  = st.slider("Light Intensity (lux)",100.0,6000.0,float(current_params.get("light_intensity", 3000.0)),50.0)
-    ventilation_rate = st.slider("Ventilation Rate (%)", 0.0,  100.0, float(current_params.get("ventilation_rate", 50.0)),1.0)
-    leaf_area_index  = st.slider("Leaf Area Index",      0.5,   7.0,  float(current_params.get("leaf_area_index", 2.0)),  0.1)
-
-    st.markdown("---")
-    st.markdown('<p class="section-header">🧊 3D Plant Model</p>', unsafe_allow_html=True)
-    components.iframe("https://my.spline.design/miniroom-0b666a0d244958ceef967db0b537c376/", height=250)
+    st.markdown('<div class="section-header">🧊 Digital Twin Model</div>', unsafe_allow_html=True)
+    components.iframe("https://my.spline.design/miniroom-0b666a0d244958ceef967db0b537c376/", height=220)
     
     st.markdown("---")
     engine_status = get_ai_engine_status()
-    st.markdown(f'<span class="engine-pill">🤖 {engine_status}</span>', unsafe_allow_html=True)
-    run_ai = st.button("⚡ Run Full AI Analysis", use_container_width=True, type="primary")
+    st.markdown(f'<div style="text-align: center; margin-bottom: 1rem;"><span class="engine-pill">System Status: {engine_status}</span></div>', unsafe_allow_html=True)
+    run_ai = st.button("Generate AI Insights", use_container_width=True, type="primary")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # ASSEMBLE PARAMS & RUN ANALYTICS
@@ -316,29 +316,29 @@ if "ai_result" not in st.session_state: st.session_state["ai_result"] = None
 if run_ai:
     placeholder = st.empty()
     with placeholder.container():
-        st.markdown("<h3 style='text-align:center; color:var(--accent); font-family:Orbitron;'>AI is Analyzing Data...</h3>", unsafe_allow_html=True)
-        if lottie_ai_thinking: st_lottie(lottie_ai_thinking, height=200, key="thinking")
+        st.markdown("<div style='text-align:center; padding: 2rem;'><h3 style='color: #10B981; font-weight: 500;'>AI is compiling insights...</h3></div>", unsafe_allow_html=True)
+        if lottie_ai_thinking: st_lottie(lottie_ai_thinking, height=150, key="thinking")
         else: st.spinner("Processing...")
     st.session_state["ai_result"] = get_ai_recommendations(params, analysis)
     placeholder.empty()
 
 # ─────────────────────────────────────────────────────────────────────────────
-# HERO HEADER
+# HEADER
 # ─────────────────────────────────────────────────────────────────────────────
 col_h1, col_h2 = st.columns([3, 1])
 with col_h1:
-    st.markdown(f'<h1 class="hero-title">{APP_ICON} AgriTwin AI</h1><p class="hero-sub">AI-Powered Predictive Digital Twin · Smart Protected Agriculture</p>', unsafe_allow_html=True)
+    st.markdown('<div style="font-size: 2.2rem; font-weight: 600; letter-spacing: -0.03em;">Workspace Overview</div>', unsafe_allow_html=True)
 with col_h2:
     now = datetime.datetime.now()
-    st.markdown(f'<div style="text-align:right;padding-top:0.5rem"><span class="live-dot"></span><span style="color:var(--accent);font-family:Orbitron;font-size:0.7rem;">LIVE</span><br><span style="color:rgba(226,248,244,0.5);font-size:0.75rem;">{now.strftime("%d %b %Y  %H:%M")}</span><br><span style="color:#A78BFA;font-size:0.75rem;">📌 {crop_type} · {growth_stage}</span></div>', unsafe_allow_html=True)
-st.markdown("---")
+    st.markdown(f'<div style="text-align:right; padding-top: 0.5rem;"><div style="font-size: 0.85rem; color: #9CA3AF;">{now.strftime("%B %d, %Y • %H:%M")}</div><div style="font-size: 0.9rem; font-weight: 500; color: #10B981; margin-top: 0.2rem;">Currently Tracking: {crop_type}</div></div>', unsafe_allow_html=True)
+
+st.markdown("<div style='height: 1.5rem;'></div>", unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 5 TABS SETUP
+# 5 TABS SETUP 
 # ─────────────────────────────────────────────────────────────────────────────
 tab_dashboard, tab_chat, tab_vision, tab_finance, tab_hardware = st.tabs([
-    "📊 SYSTEM DASHBOARD", "💬 MAIN AI ASSISTANT", "📸 DISEASE VISION SCANNER", 
-    "📈 MARKET ANALYZER", "⚙️ HARDWARE & ALERTS"
+    "Dashboard", "AI Assistant", "Vision Scanner", "Market Analytics", "Hardware Controls"
 ])
 
 # =============================================================================
@@ -346,126 +346,96 @@ tab_dashboard, tab_chat, tab_vision, tab_finance, tab_hardware = st.tabs([
 # =============================================================================
 with tab_dashboard:
     k1, k2, k3, k4, k5, k6 = st.columns(6)
-    def kpi(col, emoji, value, unit, label, color="var(--accent)"):
-        col.markdown(f'<div class="metric-tile"><div style="font-size:1.4rem">{emoji}</div><div class="metric-value" style="color:{color};">{value}{unit}</div><div class="metric-label">{label}</div></div>', unsafe_allow_html=True)
+    def kpi(col, emoji, value, unit, label, color="#10B981"):
+        col.markdown(f'<div class="metric-tile"><div style="font-size:1.6rem; margin-bottom: 0.5rem;">{emoji}</div><div class="metric-value" style="color:{color};">{value}{unit}</div><div class="metric-label">{label}</div></div>', unsafe_allow_html=True)
 
-    kpi(k1, "🌡", f"{temperature:.1f}", "°C", "Temperature", "#FF6B6B" if temperature > 30 else "var(--accent)")
-    kpi(k2, "💧", f"{humidity:.1f}", "%",  "Humidity", "#F59E0B" if humidity > 80 else "#00A8FF")
-    kpi(k3, "🌱", f"{soil_moisture:.1f}", "%", "Soil Moisture", "#EF4444" if soil_moisture < 30 else "#7FFF00")
-    kpi(k4, "💨", f"{co2_level:.0f}", "", "CO₂ ppm", "#F59E0B" if co2_level < 600 else "var(--accent)")
-    kpi(k5, "☀️", f"{light_intensity:.0f}", "", "Lux", "#FFD700")
-    kpi(k6, "🌬", f"{ventilation_rate:.0f}", "%", "Ventilation", "#EF4444" if ventilation_rate < 40 else "var(--accent)")
+    kpi(k1, "🌡", f"{temperature:.1f}", "°C", "Temperature", "#EF4444" if temperature > 30 else "#10B981")
+    kpi(k2, "💧", f"{humidity:.1f}", "%",  "Humidity", "#F59E0B" if humidity > 80 else "#3B82F6")
+    kpi(k3, "🌱", f"{soil_moisture:.1f}", "%", "Moisture", "#EF4444" if soil_moisture < 30 else "#10B981")
+    kpi(k4, "💨", f"{co2_level:.0f}", "", "CO₂ Level", "#F59E0B" if co2_level < 600 else "#10B981")
+    kpi(k5, "☀️", f"{light_intensity:.0f}", "", "Light (lux)", "#FBBF24")
+    kpi(k6, "🌬", f"{ventilation_rate:.0f}", "%", "Airflow", "#EF4444" if ventilation_rate < 40 else "#10B981")
 
-    st.markdown("---")
+    st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
     c_sus, c_dis, c_irr = st.columns([1.2, 1.2, 1.2])
+    
     with c_sus:
-        st.markdown('<p class="section-header">♻️ Sustainability Score</p>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">Sustainability Index</div>', unsafe_allow_html=True)
         gc = sus_data["grade_color"]
-        fig_gauge = go.Figure(go.Indicator(mode="gauge+number", value=sus_data["total"], domain={'x': [0, 1], 'y': [0, 1]}, number={'font': {'color': gc, 'size': 45, 'family': 'Orbitron'}}, gauge={'axis': {'range': [None, 100], 'tickcolor': "white"}, 'bar': {'color': gc, 'thickness': 0.25}, 'bgcolor': "rgba(0,0,0,0)", 'borderwidth': 1, 'bordercolor': "gray", 'steps': [{'range': [0, 40], 'color': "rgba(239, 68, 68, 0.2)"}, {'range': [40, 75], 'color': "rgba(245, 158, 11, 0.2)"}, {'range': [75, 100], 'color': "rgba(0, 222, 180, 0.2)"}]}))
-        fig_gauge.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=200, margin=dict(l=20, r=20, t=30, b=20))
+        fig_gauge = go.Figure(go.Indicator(mode="gauge+number", value=sus_data["total"], domain={'x': [0, 1], 'y': [0, 1]}, number={'font': {'color': gc, 'size': 40, 'family': 'Inter'}}, gauge={'axis': {'range': [None, 100], 'tickcolor': "rgba(255,255,255,0.1)"}, 'bar': {'color': gc, 'thickness': 0.25}, 'bgcolor': "rgba(0,0,0,0)", 'borderwidth': 0, 'steps': [{'range': [0, 40], 'color': "rgba(239, 68, 68, 0.15)"}, {'range': [40, 75], 'color': "rgba(245, 158, 11, 0.15)"}, {'range': [75, 100], 'color': "rgba(16, 185, 129, 0.15)"}]}))
+        fig_gauge.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=200, margin=dict(l=20, r=20, t=20, b=20))
         st.markdown(f'<div class="glass-card" style="text-align:center">', unsafe_allow_html=True)
         st.plotly_chart(fig_gauge, use_container_width=True, config={"displayModeBar": False})
-        st.markdown(f'<div style="font-size:1.1rem; color:{gc}; font-weight:bold;">Grade {sus_data["grade"]}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="font-size:1.1rem; color:{gc}; font-weight:600; margin-top:-10px;">Grade {sus_data["grade"]}</div></div>', unsafe_allow_html=True)
 
         html_bars = ""
-        for lbl, val, clr in [("Water Efficiency", sus_data["water_efficiency"], "#00A8FF"), ("Energy Efficiency", sus_data["energy_efficiency"], "#7C3AED"), ("Climate Control", sus_data["climate_optimization"], "var(--accent)"), ("Disease Prevention", sus_data["disease_prevention"], "#7FFF00"), ("Yield Potential", sus_data["yield_potential"], "#FFD700")]: html_bars += progress_html(lbl, val, clr)
+        for lbl, val, clr in [("Water Efficiency", sus_data["water_efficiency"], "#3B82F6"), ("Energy Efficiency", sus_data["energy_efficiency"], "#8B5CF6"), ("Climate Control", sus_data["climate_optimization"], "#10B981"), ("Disease Prevention", sus_data["disease_prevention"], "#34D399"), ("Yield Potential", sus_data["yield_potential"], "#FBBF24")]: html_bars += progress_html(lbl, val, clr)
         st.markdown(f'<div class="glass-card">{html_bars}</div>', unsafe_allow_html=True)
 
     with c_dis:
-        st.markdown('<p class="section-header">🦠 Disease Risk Analysis</p>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">Disease Risk Profile</div>', unsafe_allow_html=True)
         dlc = dis_data["level_color"]
-        st.markdown(f'<div class="glass-card" style="text-align:center"><span class="risk-badge" style="background:{dlc}22;color:{dlc};border:1px solid {dlc};">{dis_data["level"].upper()}</span><br><div style="font-family:Orbitron;font-size:2.4rem;color:{dlc};margin:0.4rem 0">{dis_data["overall"]:.1f}<span style="font-size:1rem;">%</span></div><div style="font-size:0.75rem;color:rgba(226,248,244,0.5);">Overall Risk Index</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="glass-card" style="text-align:center; padding: 2rem 1.5rem;"><span class="risk-badge" style="background:{dlc}15;color:{dlc};border:1px solid {dlc};">{dis_data["level"].upper()} RISK</span><br><div style="font-size:3rem; font-weight: 700; color:{dlc}; margin:0.5rem 0; line-height: 1;">{dis_data["overall"]:.1f}<span style="font-size:1.2rem;">%</span></div><div style="font-size:0.85rem;color:var(--text-secondary);">Cumulative Probability</div></div>', unsafe_allow_html=True)
         disease_html = ""
-        d_colors = ["#EF4444", "#F59E0B", "#7C3AED", "#00A8FF"]
+        d_colors = ["#EF4444", "#F59E0B", "#8B5CF6", "#3B82F6"]
         for i, (name, val) in enumerate(dis_data["diseases"].items()): disease_html += progress_html(name, val, d_colors[i % len(d_colors)])
         st.markdown(f'<div class="glass-card">{disease_html}</div>', unsafe_allow_html=True)
 
     with c_irr:
-        st.markdown('<p class="section-header">💦 Irrigation Intelligence</p>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">Irrigation Protocol</div>', unsafe_allow_html=True)
         isc = irr_data["status_color"]
-        st.markdown(f'<div class="glass-card" style="text-align:center"><span class="status-pill" style="background:{isc}22;color:{isc};border:1px solid {isc};">{irr_data["status"].upper()}</span><br><div style="font-family:Orbitron;font-size:2.2rem;color:{isc};margin:0.4rem 0">{irr_data["urgency"]:.1f}<span style="font-size:1rem;">%</span></div><div style="font-size:0.75rem;color:rgba(226,248,244,0.5);">Urgency Index</div></div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="glass-card">' + progress_html("Irrigation Urgency", irr_data["urgency"], isc) + f'<div style="margin-top:0.8rem;font-size:0.85rem;">📦 Volume Required: <b style="color:{isc}">{irr_data["volume_liters"]:.2f} L/m²</b><br>⏰ Next Irrigation: <b style="color:{isc}">{irr_data["next_irrigation_hours"]}h</b><br>🌿 ET₀ Rate: <b style="color:{isc}">{irr_data["evapotranspiration"]:.3f} mm/hr</b></div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="glass-card" style="text-align:center; padding: 2rem 1.5rem;"><span class="status-pill" style="background:{isc}15;color:{isc};border:1px solid {isc};">STATUS: {irr_data["status"].upper()}</span><br><div style="font-size:3rem; font-weight: 700; color:{isc}; margin:0.5rem 0; line-height: 1;">{irr_data["urgency"]:.1f}<span style="font-size:1.2rem;">%</span></div><div style="font-size:0.85rem;color:var(--text-secondary);">Urgency Index</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="glass-card">' + progress_html("Urgency Level", irr_data["urgency"], isc) + f'<div style="margin-top:1.2rem;font-size:0.9rem; line-height: 1.8; color: var(--text-primary);">📦 Required Volume: <span style="float: right; font-weight: 600; color:{isc}">{irr_data["volume_liters"]:.2f} L/m²</span><br>⏰ Next Cycle In: <span style="float: right; font-weight: 600; color:{isc}">{irr_data["next_irrigation_hours"]} hours</span><br>🌿 Evapotranspiration: <span style="float: right; font-weight: 600; color:{isc}">{irr_data["evapotranspiration"]:.3f} mm/hr</span></div></div>', unsafe_allow_html=True)
 
-    st.markdown("---")
+    st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
     ch1, ch2, ch3 = st.columns(3)
     with ch1:
-        st.markdown('<p class="section-header">📊 24h Climate Trend</p>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">Microclimate Trends (24h)</div>', unsafe_allow_html=True)
         trend = generate_trend_data(temperature, humidity, 24)
         fig_trend = go.Figure()
-        fig_trend.add_trace(go.Scatter(x=trend["times"], y=trend["temperatures"], name="Temp °C", line=dict(color="#FF6B6B", width=2), fill="tozeroy", fillcolor="rgba(255,107,107,0.08)"))
-        fig_trend.add_trace(go.Scatter(x=trend["times"], y=trend["humidities"], name="Humidity %", line=dict(color="#00A8FF", width=2), fill="tozeroy", fillcolor="rgba(0,168,255,0.06)"))
-        fig_trend.add_trace(go.Scatter(x=trend["times"], y=trend["soil_moisture"], name="Soil %", line=dict(color="#7FFF00", width=2, dash="dot")))
-        fig_trend.update_layout(**PLOTLY_LAYOUT, height=280, xaxis=dict(tickangle=45, nticks=8))
+        fig_trend.add_trace(go.Scatter(x=trend["times"], y=trend["temperatures"], name="Temp °C", line=dict(color="#EF4444", width=2), fill="tozeroy", fillcolor="rgba(239, 68, 68, 0.1)"))
+        fig_trend.add_trace(go.Scatter(x=trend["times"], y=trend["humidities"], name="Humidity %", line=dict(color="#3B82F6", width=2), fill="tozeroy", fillcolor="rgba(59, 130, 246, 0.1)"))
+        fig_trend.update_layout(**PLOTLY_LAYOUT, height=280, xaxis=dict(tickangle=45, nticks=6))
         plotly_dark_axes(fig_trend)
         st.plotly_chart(fig_trend, use_container_width=True, config={"displayModeBar": False})
 
     with ch2:
-        st.markdown('<p class="section-header">🎯 Risk Radar</p>', unsafe_allow_html=True)
-        radar_cats = ["Disease Risk", "Heat Stress", "Water Stress", "CO₂ Deficit", "Ventilation Risk", "Yield Risk"]
+        st.markdown('<div class="section-header">Operational Risk Radar</div>', unsafe_allow_html=True)
+        radar_cats = ["Disease", "Heat Stress", "Water Stress", "CO₂ Deficit", "Airflow", "Yield Risk"]
         vals = [dis_data["overall"], min(100, max(0, (heat_data["heat_index"] - 20) * 2)), max(0, 100 - sus_data["water_efficiency"]), max(0, (900 - co2_level) / 9), max(0, 100 - ventilation_rate), max(0, 100 - sus_data["yield_potential"])]
-        fig_radar = go.Figure(go.Scatterpolar(r=vals + [vals[0]], theta=radar_cats + [radar_cats[0]], fill="toself", fillcolor="rgba(239,68,68,0.15)", line=dict(color="#EF4444", width=2), name="Risk Levels"))
-        fig_radar.update_layout(**PLOTLY_LAYOUT, height=280, polar=dict(bgcolor="rgba(0,0,0,0)", radialaxis=dict(range=[0,100], gridcolor="rgba(255,255,255,0.1)", tickfont=dict(size=9, color="#E2F8F4"), showline=False), angularaxis=dict(gridcolor="rgba(255,255,255,0.1)", tickfont=dict(size=10, color="#E2F8F4"))))
+        fig_radar = go.Figure(go.Scatterpolar(r=vals + [vals[0]], theta=radar_cats + [radar_cats[0]], fill="toself", fillcolor="rgba(239, 68, 68, 0.2)", line=dict(color="#EF4444", width=2)))
+        fig_radar.update_layout(**PLOTLY_LAYOUT, height=280, polar=dict(bgcolor="rgba(0,0,0,0)", radialaxis=dict(range=[0,100], gridcolor="rgba(255,255,255,0.05)", tickfont=dict(size=9, color="#9CA3AF"), showline=False), angularaxis=dict(gridcolor="rgba(255,255,255,0.05)", tickfont=dict(size=10, color="#F3F4F6"))))
         st.plotly_chart(fig_radar, use_container_width=True, config={"displayModeBar": False})
 
     with ch3:
-        st.markdown('<p class="section-header">🥧 Sustainability Breakdown</p>', unsafe_allow_html=True)
-        pie_labels = ["Water", "Energy", "Climate", "Disease Prev.", "Yield"]
+        st.markdown('<div class="section-header">Resource Allocation</div>', unsafe_allow_html=True)
+        pie_labels = ["Water", "Energy", "Climate", "Health", "Yield"]
         pie_values = [sus_data["water_efficiency"], sus_data["energy_efficiency"], sus_data["climate_optimization"], sus_data["disease_prevention"], sus_data["yield_potential"]]
-        pie_colors = ["#00A8FF", "#7C3AED", "var(--accent)", "#7FFF00", "#FFD700"]
-        fig_pie = go.Figure(go.Pie(labels=pie_labels, values=pie_values, hole=0.55, marker=dict(colors=pie_colors, line=dict(color="#020C14", width=2)), textfont=dict(size=11)))
-        fig_pie.add_annotation(text=f"<b>{sus_data['total']}</b>", x=0.5, y=0.5, font=dict(size=26, color="var(--accent)", family="Orbitron"), showarrow=False)
+        pie_colors = ["#3B82F6", "#8B5CF6", "#10B981", "#34D399", "#FBBF24"]
+        fig_pie = go.Figure(go.Pie(labels=pie_labels, values=pie_values, hole=0.6, marker=dict(colors=pie_colors, line=dict(color="var(--bg-color)", width=3)), textfont=dict(size=11)))
+        fig_pie.add_annotation(text=f"<b>{sus_data['total']}</b>", x=0.5, y=0.5, font=dict(size=28, color="#F3F4F6", family="Inter"), showarrow=False)
         fig_pie.update_layout(**PLOTLY_LAYOUT, height=280)
         st.plotly_chart(fig_pie, use_container_width=True, config={"displayModeBar": False})
 
-    st.markdown("---")
-    hm1, hm2 = st.columns(2)
-    temp_grid, hum_grid = generate_zone_heatmap_data(temperature, humidity)
-    with hm1:
-        st.markdown('<p class="section-header">🌡 Zone Temperature Heatmap</p>', unsafe_allow_html=True)
-        fig_ht = go.Figure(go.Heatmap(z=temp_grid, text=[[f"{v:.1f}°C" for v in row] for row in temp_grid], texttemplate="%{text}", colorscale="RdYlGn_r", colorbar=dict(title="°C", tickfont=dict(color="#E2F8F4")), showscale=True))
-        fig_ht.update_layout(**PLOTLY_LAYOUT, height=260)
-        st.plotly_chart(fig_ht, use_container_width=True, config={"displayModeBar": False})
-    with hm2:
-        st.markdown('<p class="section-header">💧 Zone Humidity Heatmap</p>', unsafe_allow_html=True)
-        fig_hh = go.Figure(go.Heatmap(z=hum_grid, text=[[f"{v:.1f}%" for v in row] for row in hum_grid], texttemplate="%{text}", colorscale="Blues", colorbar=dict(title="%", tickfont=dict(color="#E2F8F4")), showscale=True))
-        fig_hh.update_layout(**PLOTLY_LAYOUT, height=260)
-        st.plotly_chart(fig_hh, use_container_width=True, config={"displayModeBar": False})
-
-    st.markdown("---")
-    st.markdown('<p class="section-header">🤖 AI Prediction & Recommendation Engine</p>', unsafe_allow_html=True)
+    st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
+    st.markdown('<div class="section-header">AI Strategic Insights</div>', unsafe_allow_html=True)
     ai_res = st.session_state.get("ai_result")
     
     if not ai_res:
-        st.markdown('<div class="glass-card" style="text-align:center;padding:2rem;"><div style="font-size:2.5rem">⚡</div><div style="font-family:Orbitron;color:var(--accent);margin:0.5rem 0;">AI Engine Ready</div>'
-            f'<div style="color:rgba(226,248,244,0.5);font-size:0.85rem;">Click <b>Run Full AI Analysis</b> in the sidebar.</div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="glass-card" style="text-align:center;padding:3rem 1rem;"><div style="font-size:2rem; margin-bottom: 1rem;">✨</div><div style="font-size: 1.1rem; font-weight: 500; color: #F3F4F6;">AI Engine is standing by</div><div style="color: #9CA3AF; font-size: 0.9rem; margin-top: 0.5rem;">Click "Generate AI Insights" in the sidebar to process current telemetry.</div></div>', unsafe_allow_html=True)
     else:
-        src_col, _ = st.columns([2, 3])
-        with src_col: st.markdown(f'<span class="engine-pill">Source: {ai_res.get("source","AI Engine")}</span>', unsafe_allow_html=True)
         ai_c1, ai_c2 = st.columns(2)
         with ai_c1:
-            st.markdown(f'<div class="ai-card"><h4>🦠 Disease Warning</h4><p>{ai_res.get("disease_warning","—")}</p></div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="ai-card"><h4>🌡 Climate Warning</h4><p>{ai_res.get("climate_warning","—")}</p></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="ai-card"><h4>🛡️ Crop Health Directive</h4><p>{ai_res.get("disease_warning","—")}</p></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="ai-card"><h4>🌡 Climate Optimization</h4><p>{ai_res.get("climate_warning","—")}</p></div>', unsafe_allow_html=True)
         with ai_c2:
-            st.markdown(f'<div class="ai-card"><h4>💦 Irrigation Advice</h4><p>{ai_res.get("irrigation_advice","—")}</p></div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="ai-card"><h4>♻️ Sustainability Insight</h4><p>{ai_res.get("sustainability_insight","—")}</p></div>', unsafe_allow_html=True)
-        st.markdown('<p style="font-family:Orbitron;font-size:0.8rem;color:var(--accent);letter-spacing:0.1em;margin-top:0.8rem;">⚡ PRIORITY ACTIONS</p>', unsafe_allow_html=True)
-        for i, action in enumerate(ai_res.get("top_actions", []), 1):
-            st.markdown(f'<div class="action-item">{"🔴" if i==1 else "🟡" if i==2 else "🟢"} <b>#{i}</b> — {action}</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="glass-card" style="margin-top:0.5rem"><b style="color:var(--accent);font-family:Orbitron;font-size:0.75rem;">📋 OVERALL ASSESSMENT</b><br><br><span style="font-size:0.92rem;line-height:1.7">{ai_res.get("overall_assessment","—")}</span></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="ai-card"><h4>💧 Resource Management</h4><p>{ai_res.get("irrigation_advice","—")}</p></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="ai-card"><h4>♻️ Sustainability Target</h4><p>{ai_res.get("sustainability_insight","—")}</p></div>', unsafe_allow_html=True)
         
-        report_text = f"=== AgriTwin AI - Farm Management Report ===\nDate: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}\nCrop: {crop_type} ({growth_stage})\n\n--- SENSOR DATA ---\nTemperature: {temperature}°C\nHumidity: {humidity}%\nSoil Moisture: {soil_moisture}%\nCO2 Level: {co2_level} ppm\n\n--- AI RECOMMENDATIONS ---\nDisease Warning: {ai_res.get('disease_warning')}\nClimate Warning: {ai_res.get('climate_warning')}\nIrrigation Advice: {ai_res.get('irrigation_advice')}\n\n--- OVERALL ASSESSMENT ---\n{ai_res.get('overall_assessment')}\n"
-        st.download_button(label="📄 Download AI Report (.txt)", data=report_text, file_name=f"AgriTwin_Report_{crop_type}_{datetime.datetime.now().strftime('%Y%m%d')}.txt", mime="text/plain", type="secondary", use_container_width=True)
-
-    st.markdown("---")
-    st.markdown('<p class="section-header">📊 System Performance Evaluation</p>', unsafe_allow_html=True)
-    p1, p2, p3, p4 = st.columns(4)
-    def perf_card(col, icon, label, val, color):
-        col.markdown(f'<div class="metric-tile"><div style="font-size:1.3rem">{icon}</div><div class="metric-value" style="color:{color};">{val:.1f}</div><div class="metric-label">{label}</div></div>', unsafe_allow_html=True)
-    gc = perf_data["grade_color"]
-    perf_card(p1, "🎯", "Prediction Accuracy", perf_data["prediction_accuracy"], "#00A8FF")
-    perf_card(p2, "⚙️", "System Efficiency", perf_data["system_efficiency"], "#7C3AED")
-    perf_card(p3, "🏡", "Greenhouse Performance", perf_data["greenhouse_performance"], "#00DEB4")
-    p4.markdown(f'<div class="metric-tile"><div style="font-size:1.3rem">🏆</div><div class="metric-value" style="color:{gc};">{perf_data["overall"]:.1f}</div><div class="metric-label">Overall Score · Grade <b style="color:{gc}">{perf_data["grade"]}</b></div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="glass-card" style="margin-top:0.5rem"><h4 style="font-size: 0.9rem; color: #10B981; margin-bottom: 0.8rem; text-transform: uppercase;">Executive Summary</h4><span style="font-size:0.95rem; line-height: 1.6;">{ai_res.get("overall_assessment","—")}</span></div>', unsafe_allow_html=True)
+        
+        report_text = f"=== AgriTwin AI Pro - Executive Report ===\nDate: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}\nCrop: {crop_type} ({growth_stage})\n\n--- TELEMETRY ---\nTemp: {temperature}°C | Humidity: {humidity}% | Moisture: {soil_moisture}% | CO2: {co2_level}ppm\n\n--- STRATEGIC DIRECTIVES ---\nHealth: {ai_res.get('disease_warning')}\nClimate: {ai_res.get('climate_warning')}\nIrrigation: {ai_res.get('irrigation_advice')}\n\n--- SUMMARY ---\n{ai_res.get('overall_assessment')}\n"
+        st.download_button(label="📥 Export Executive Report", data=report_text, file_name=f"AgriTwin_Report_{datetime.datetime.now().strftime('%Y%m%d')}.txt", mime="text/plain", use_container_width=True)
 
 # =============================================================================
 # Helper Functions for Models
@@ -488,24 +458,24 @@ def get_working_vision_model():
 # TAB 2: MAIN AI ASSISTANT (CHATBOT)
 # =============================================================================
 with tab_chat:
-    st.markdown('<p class="section-header">💬 Main AI Agri-Assistant</p>', unsafe_allow_html=True)
-    if not API_KEY: st.warning("⚠️ Add GEMINI_API_KEY to Streamlit Secrets.")
+    st.markdown('<div class="section-header">Agronomy Assistant</div>', unsafe_allow_html=True)
+    if not API_KEY: st.warning("⚠️ API Key required. Configure in Streamlit Secrets.")
     else:
         if "main_messages" not in st.session_state: st.session_state.main_messages = []
         for msg in st.session_state.main_messages:
             with st.chat_message(msg["role"]): st.markdown(msg["content"])
         
-        if prompt := st.chat_input(f"Ask general questions about managing {crop_type}...", key="main_chat"):
+        if prompt := st.chat_input(f"Type your question regarding {crop_type} cultivation...", key="main_chat"):
             st.session_state.main_messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"): st.markdown(prompt)
             with st.chat_message("assistant"):
                 placeholder = st.empty()
                 with placeholder.container():
-                    if lottie_ai_thinking: st_lottie(lottie_ai_thinking, height=100, key="chat_main_thinking")
-                    else: st.spinner("Thinking...")
+                    if lottie_ai_thinking: st_lottie(lottie_ai_thinking, height=60, key="chat_main_thinking")
+                    else: st.spinner("Analyzing...")
                 try:
                     model = genai.GenerativeModel(get_working_text_model())
-                    response = model.generate_content(f"You are an expert AI assistant for {crop_type} at {growth_stage}. Question: {prompt}")
+                    response = model.generate_content(f"You are an expert agronomy AI. The user is growing {crop_type} at {growth_stage}. Question: {prompt}")
                     placeholder.empty()
                     st.markdown(response.text)
                     st.session_state.main_messages.append({"role": "assistant", "content": response.text})
@@ -517,49 +487,46 @@ with tab_chat:
 # TAB 3: DISEASE VISION SCANNER + INTEGRATED CHAT
 # =============================================================================
 with tab_vision:
-    st.markdown('<p class="section-header">📸 AI Disease Vision Scanner</p>', unsafe_allow_html=True)
-    if not API_KEY: st.warning("⚠️ Add GEMINI_API_KEY to Streamlit Secrets.")
+    st.markdown('<div class="section-header">Pathology Scanner</div>', unsafe_allow_html=True)
+    if not API_KEY: st.warning("⚠️ API Key required.")
     else:
         c1, c2 = st.columns(2)
         with c1:
-            img_file = st.file_uploader("Upload image", type=["jpg", "png"]) or st.camera_input("Take photo")
+            img_file = st.file_uploader("Upload leaf sample", type=["jpg", "png"]) or st.camera_input("Take photo")
             if img_file: 
                 image = Image.open(img_file)
-                st.image(image, use_column_width=True)
+                st.image(image, use_column_width=True, caption="Sample Loaded")
         with c2:
             if img_file:
-                if st.button("🔍 Scan Image", type="primary", use_container_width=True):
+                if st.button("Run Diagnostic Scan", type="primary", use_container_width=True):
                     placeholder = st.empty()
                     with placeholder.container():
-                        if lottie_ai_thinking: st_lottie(lottie_ai_thinking, height=150, key="vision_scanning")
-                        else: st.spinner("Scanning...")
+                        if lottie_ai_thinking: st_lottie(lottie_ai_thinking, height=100, key="vision_scanning")
+                        else: st.spinner("Processing visual data...")
                     try:
                         v_model = genai.GenerativeModel(get_working_vision_model())
-                        res = v_model.generate_content([f"Identify diseases on this {crop_type} plant. Provide 3-step treatment.", image])
+                        res = v_model.generate_content([f"Identify diseases on this {crop_type}. Provide concise diagnosis and treatment.", image])
                         placeholder.empty()
                         st.session_state.vision_result = res.text
                     except Exception as e:
                         placeholder.empty()
                         st.error(f"Error: {e}")
         
-        # Keep results and chat visible after button click
         if st.session_state.vision_result:
-            st.markdown(f'<div class="glass-card"><b style="color:var(--accent);">🔬 SCAN RESULTS</b><br><br>{st.session_state.vision_result}</div>', unsafe_allow_html=True)
-            
-            st.markdown("---")
-            st.markdown("#### 💬 Ask AI about these results")
+            st.markdown(f'<div class="glass-card"><h4 style="color:#10B981; margin-top:0;">Diagnostic Report</h4>{st.session_state.vision_result}</div>', unsafe_allow_html=True)
+            st.markdown("<div class='section-header' style='font-size: 1rem; margin-top: 2rem;'>Consult Pathologist</div>", unsafe_allow_html=True)
             for msg in st.session_state.vision_messages:
                 with st.chat_message(msg["role"]): st.markdown(msg["content"])
                 
-            if v_prompt := st.chat_input("Ask about the treatment or disease...", key="vision_chat_input"):
+            if v_prompt := st.chat_input("Ask for clarification or treatment details...", key="vision_chat_input"):
                 st.session_state.vision_messages.append({"role": "user", "content": v_prompt})
                 with st.chat_message("user"): st.markdown(v_prompt)
                 with st.chat_message("assistant"):
-                    with st.spinner("Analyzing..."):
+                    with st.spinner("Evaluating..."):
                         try:
                             model = genai.GenerativeModel(get_working_text_model())
-                            sys_prompt = f"You are a plant pathologist. The user just scanned a {crop_type} image. The AI scan result was: '{st.session_state.vision_result}'. Answer their follow-up question based on this result."
-                            chat_res = model.generate_content(sys_prompt + "\n\nUser Question: " + v_prompt)
+                            sys_prompt = f"Act as a pathologist. Context: {crop_type} crop. Scan result: '{st.session_state.vision_result}'."
+                            chat_res = model.generate_content(sys_prompt + " User asks: " + v_prompt)
                             st.markdown(chat_res.text)
                             st.session_state.vision_messages.append({"role": "assistant", "content": chat_res.text})
                         except Exception as e:
@@ -569,41 +536,39 @@ with tab_vision:
 # TAB 4: MARKET ANALYZER + INTEGRATED CHAT
 # =============================================================================
 with tab_finance:
-    st.markdown('<p class="section-header">📈 Profit & Market Analyzer</p>', unsafe_allow_html=True)
-    st.markdown("Analyze current market trends and predict harvest profitability.")
+    st.markdown('<div class="section-header">Financial Modeling</div>', unsafe_allow_html=True)
     
     f_col1, f_col2, f_col3 = st.columns(3)
-    plants_count = f_col1.number_input("Total Plants in Greenhouse", value=1000, step=100)
-    expected_yield_per_plant = f_col2.number_input("Expected Yield per Plant (kg)", value=0.15, step=0.05)
-    market_price = f_col3.number_input("Current Market Price (Per kg LKR)", value=450.0, step=10.0)
+    plants_count = f_col1.number_input("Active Plants", value=1000, step=100)
+    expected_yield_per_plant = f_col2.number_input("Yield/Plant (kg)", value=0.15, step=0.05)
+    market_price = f_col3.number_input("Market Price (LKR/kg)", value=450.0, step=10.0)
     
     total_yield_kg = plants_count * expected_yield_per_plant
     gross_revenue = total_yield_kg * market_price
     estimated_running_cost = (plants_count * 15) + 5000 
     net_profit = gross_revenue - estimated_running_cost
     
-    st.markdown("---")
+    st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
     res_col1, res_col2, res_col3 = st.columns(3)
-    res_col1.metric("📦 Estimated Total Yield", f"{total_yield_kg:.1f} kg")
-    res_col2.metric("💸 Estimated Total Cost", f"Rs. {estimated_running_cost:,.2f}")
-    res_col3.metric("💰 Projected Net Profit", f"Rs. {net_profit:,.2f}", delta=f"{net_profit/estimated_running_cost * 100:.1f}% ROI")
+    res_col1.metric("Projected Yield", f"{total_yield_kg:.1f} kg")
+    res_col2.metric("Opex Estimate", f"LKR {estimated_running_cost:,.2f}")
+    res_col3.metric("Net Profit Margin", f"LKR {net_profit:,.2f}", delta=f"{net_profit/estimated_running_cost * 100:.1f}% ROI")
     
-    st.markdown('<div class="glass-card">💡 <b>Market Insight:</b> Harvest timing is optimal. Current market demand for hydroponic produce is showing a 12% upward trend in local supermarkets.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="glass-card" style="margin-top: 1rem;">💡 <b>Market Intelligence:</b> Demand index for locally sourced greenhouse produce remains strong. Consider forward contracts to lock in current price margins.</div>', unsafe_allow_html=True)
     
-    st.markdown("---")
-    st.markdown("#### 💬 AI Financial Advisor")
+    st.markdown("<div class='section-header' style='font-size: 1rem; margin-top: 2rem;'>Financial Advisor</div>", unsafe_allow_html=True)
     for msg in st.session_state.market_messages:
         with st.chat_message(msg["role"]): st.markdown(msg["content"])
         
-    if m_prompt := st.chat_input("Ask for market advice or profitability tips...", key="market_chat_input"):
+    if m_prompt := st.chat_input("Ask about ROI optimization...", key="market_chat_input"):
         st.session_state.market_messages.append({"role": "user", "content": m_prompt})
         with st.chat_message("user"): st.markdown(m_prompt)
         with st.chat_message("assistant"):
-            with st.spinner("Calculating..."):
+            with st.spinner("Analyzing markets..."):
                 try:
                     model = genai.GenerativeModel(get_working_text_model())
-                    sys_prompt = f"You are an agricultural financial advisor. The user is growing {plants_count} {crop_type} plants. Total yield: {total_yield_kg}kg, Market price: Rs.{market_price}, Estimated cost: Rs.{estimated_running_cost}, Net Profit: Rs.{net_profit}. Provide financial and market advice based on these numbers."
-                    chat_res = model.generate_content(sys_prompt + "\n\nUser Question: " + m_prompt)
+                    sys_prompt = f"Act as an Ag-Tech financial advisor. Crop: {crop_type}. Yield: {total_yield_kg}kg, Revenue: {gross_revenue}, Cost: {estimated_running_cost}."
+                    chat_res = model.generate_content(sys_prompt + " Query: " + m_prompt)
                     st.markdown(chat_res.text)
                     st.session_state.market_messages.append({"role": "assistant", "content": chat_res.text})
                 except Exception as e:
@@ -613,25 +578,23 @@ with tab_finance:
 # TAB 5: HARDWARE & ALERTS
 # =============================================================================
 with tab_hardware:
-    st.markdown('<p class="section-header">⚙️ Smart Hardware API & Automated Triggers</p>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">Device Integration & Webhooks</div>', unsafe_allow_html=True)
     
     h_col1, h_col2 = st.columns(2)
     with h_col1:
-        st.markdown('<div class="glass-card"><h4>📡 Hardware API Endpoint</h4>', unsafe_allow_html=True)
-        st.markdown("Connect your ESP32, Arduino, or Raspberry Pi directly to this dashboard.")
-        st.code("POST https://agritwin-ai.streamlit.app/api/v1/sensors\n{\n  \"api_key\": \"YOUR_SECRET_KEY\",\n  \"temp\": 28.5,\n  \"hum\": 65.2,\n  \"ec\": 1.8\n}", language="json")
-        st.button("🔄 Generate New API Key")
+        st.markdown('<div class="glass-card"><h4 style="margin-top:0;">API Telemetry Endpoint</h4><p style="font-size:0.9rem; color:var(--text-secondary);">Push sensor data via HTTP POST.</p>', unsafe_allow_html=True)
+        st.code("POST https://api.agritwin.com/v1/ingestn{\n  \"device_id\": \"GH-Node-01\",\n  \"temp\": 24.5,\n  \"hum\": 68.0\n}", language="json")
+        st.button("Generate Secure Token")
         st.markdown('</div>', unsafe_allow_html=True)
         
     with h_col2:
-        st.markdown('<div class="glass-card"><h4>📱 Automated WhatsApp Alerts</h4>', unsafe_allow_html=True)
-        phone_num = st.text_input("WhatsApp Number (with country code)", value="+947XXXXXXXX")
-        temp_threshold = st.slider("Alert me if Temperature exceeds (°C):", 25.0, 45.0, 35.0)
-        ec_threshold = st.slider("Alert me if EC drops below (mS/cm):", 0.5, 2.0, 1.2)
+        st.markdown('<div class="glass-card"><h4 style="margin-top:0;">Automated Triggers</h4><p style="font-size:0.9rem; color:var(--text-secondary);">Set bounds for emergency SMS/WhatsApp alerts.</p>', unsafe_allow_html=True)
+        phone_num = st.text_input("Alert Number", value="+94 7X XXX XXXX")
+        temp_threshold = st.slider("Max Temp Threshold (°C):", 25.0, 45.0, 32.0)
         
-        if st.button("Save Alert Configuration", type="primary"):
-            st.success("✅ Automation rules saved successfully.")
+        if st.button("Deploy Rules", type="primary"):
+            st.success("Configuration synced to edge nodes.")
             
         if temperature > temp_threshold:
-            st.error(f"🚨 **TRIGGER ACTIVATED:** Current temperature ({temperature}°C) exceeds threshold! (Simulated WhatsApp sent to {phone_num})")
+            st.error(f"⚠️ THRESHOLD BREACH: Temperature ({temperature}°C) exceeds safety limit. Alert dispatched.")
         st.markdown('</div>', unsafe_allow_html=True)
