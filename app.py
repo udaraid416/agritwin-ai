@@ -27,7 +27,7 @@ from ai_model import get_ai_recommendations, get_ai_engine_status
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# PAGE CONFIG & API SETUP
+# PAGE CONFIG aani API SETUP
 # ─────────────────────────────────────────────────────────────────────────────
 
 st.set_page_config(
@@ -37,7 +37,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Fetch API Key for Chat and Vision bots
+# Chat aani Vision bots sathi API Key fetch kara
 API_KEY = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
 if API_KEY:
     genai.configure(api_key=API_KEY)
@@ -284,37 +284,37 @@ def progress_html(label: str, value: float, color: str = "#00DEB4",
 with st.sidebar:
     st.markdown('<p class="hero-title" style="font-size:1.1rem;">🌿 AgriTwin AI</p>',
                 unsafe_allow_html=True)
-    st.markdown(f'<p class="hero-sub">v{VERSION} · Control Panel</p>',
+    st.markdown(f'<p class="hero-sub">v{VERSION} · Niyantran Kaksha</p>',
                 unsafe_allow_html=True)
     st.markdown("---")
 
     # Custom Crop Input
-    crop_type    = st.text_input("🌱 Enter Crop Type", value="Tomato", placeholder="E.g., Strawberry, Chili...")
-    growth_stage = st.selectbox("📈 Growth Stage", GROWTH_STAGES, index=1)
+    crop_type    = st.text_input("🌱 Pikacha Prakar (Enter Crop Type)", value="Tomato", placeholder="Uda., Strawberry, Chili...")
+    growth_stage = st.selectbox("📈 Vadhicha Tappa (Growth Stage)", GROWTH_STAGES, index=1)
 
-    st.markdown('<p class="section-header">🌡 Climate Sensors</p>', unsafe_allow_html=True)
-    temperature      = st.slider("Temperature (°C)",     5.0,  50.0, PARAM_DEFAULTS["temperature"], 0.5)
-    humidity         = st.slider("Humidity (%)",          10.0, 99.0, PARAM_DEFAULTS["humidity"],    0.5)
+    st.markdown('<p class="section-header">🌡 Hawaman Sensors</p>', unsafe_allow_html=True)
+    temperature      = st.slider("Tapman (°C)",     5.0,  50.0, PARAM_DEFAULTS["temperature"], 0.5)
+    humidity         = st.slider("Ardrata (%)",          10.0, 99.0, PARAM_DEFAULTS["humidity"],    0.5)
     co2_level        = st.slider("CO₂ (ppm)",            300.0,2000.0,PARAM_DEFAULTS["co2_level"],  10.0)
 
-    st.markdown('<p class="section-header">💧 Soil & Water</p>', unsafe_allow_html=True)
-    soil_moisture    = st.slider("Soil Moisture (%)",    5.0,  99.0, PARAM_DEFAULTS["soil_moisture"], 0.5)
-    ph_level         = st.slider("pH Level",             4.0,   9.0, PARAM_DEFAULTS["ph_level"],      0.1)
-    ec_level         = st.slider("EC Level (mS/cm)",     0.5,   5.0, PARAM_DEFAULTS["ec_level"],      0.1)
+    st.markdown('<p class="section-header">💧 Mati aani Pani</p>', unsafe_allow_html=True)
+    soil_moisture    = st.slider("Maticha Olawa (%)",    5.0,  99.0, PARAM_DEFAULTS["soil_moisture"], 0.5)
+    ph_level         = st.slider("pH Patali",             4.0,   9.0, PARAM_DEFAULTS["ph_level"],      0.1)
+    ec_level         = st.slider("EC Patali (mS/cm)",     0.5,   5.0, PARAM_DEFAULTS["ec_level"],      0.1)
 
-    st.markdown('<p class="section-header">💡 Light & Airflow</p>', unsafe_allow_html=True)
-    light_intensity  = st.slider("Light Intensity (lux)",100.0,6000.0,PARAM_DEFAULTS["light_intensity"],50.0)
-    ventilation_rate = st.slider("Ventilation Rate (%)", 0.0,  100.0, PARAM_DEFAULTS["ventilation_rate"],1.0)
-    leaf_area_index  = st.slider("Leaf Area Index",      0.5,   7.0,  PARAM_DEFAULTS["leaf_area_index"],  0.1)
+    st.markdown('<p class="section-header">💡 Prakash aani Hawa</p>', unsafe_allow_html=True)
+    light_intensity  = st.slider("Prakashachi Tivrata (lux)",100.0,6000.0,PARAM_DEFAULTS["light_intensity"],50.0)
+    ventilation_rate = st.slider("Hawa Khelati Rahnyacha Dar (%)", 0.0,  100.0, PARAM_DEFAULTS["ventilation_rate"],1.0)
+    leaf_area_index  = st.slider("Pananche Kshetra Nirdeshank",      0.5,   7.0,  PARAM_DEFAULTS["leaf_area_index"],  0.1)
 
     st.markdown("---")
     engine_status = get_ai_engine_status()
     st.markdown(f'<span class="engine-pill">🤖 {engine_status}</span>', unsafe_allow_html=True)
-    run_ai = st.button("⚡ Run Detailed AI Analysis", use_container_width=True, type="primary")
+    run_ai = st.button("⚡ Savisthar AI Vishleshan Suru Kara", use_container_width=True, type="primary")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# ASSEMBLE PARAMS & RUN ANALYTICS
+# PARAMS GOLA KARA aani ANALYTICS CHALWA
 # ─────────────────────────────────────────────────────────────────────────────
 
 params = {
@@ -340,11 +340,11 @@ analysis   = {"sustainability": sus_data, "disease": dis_data,
 perf_data  = evaluate_system_performance(sus_data, dis_data, irr_data)
 analysis["performance"] = perf_data
 
-# Session state for AI results
+# AI results sathi session state
 if "ai_result" not in st.session_state:
     st.session_state["ai_result"] = None
 if run_ai:
-    with st.spinner(f"🤖 AI Engine processing deep analysis for {crop_type}…"):
+    with st.spinner(f"🤖 AI Engine {crop_type} sathi savisthar vishleshan karat ahe…"):
         time.sleep(0.6)
         st.session_state["ai_result"] = get_ai_recommendations(params, analysis)
 
@@ -378,8 +378,8 @@ st.markdown("---")
 
 tab_dashboard, tab_chat, tab_vision = st.tabs([
     "📊 SYSTEM DASHBOARD", 
-    "💬 AI AGRI-ASSISTANT", 
-    "📸 DISEASE VISION SCANNER"
+    "💬 AI KRUSHI-SAHAYYAK", 
+    "📸 ROG DRUSHTI SCANNER"
 ])
 
 # =============================================================================
@@ -398,9 +398,9 @@ with tab_dashboard:
             f'<div class="metric-label">{label}</div>'
             f'</div>', unsafe_allow_html=True)
 
-    kpi(k1, "🌡", f"{temperature:.1f}", "°C", "Temperature", "#FF6B6B" if temperature > 30 else "#00DEB4")
-    kpi(k2, "💧", f"{humidity:.1f}", "%",  "Humidity", "#F59E0B" if humidity > 80 else "#00A8FF")
-    kpi(k3, "🌱", f"{soil_moisture:.1f}", "%", "Soil Moisture", "#EF4444" if soil_moisture < 30 else "#7FFF00")
+    kpi(k1, "🌡", f"{temperature:.1f}", "°C", "Tapman", "#FF6B6B" if temperature > 30 else "#00DEB4")
+    kpi(k2, "💧", f"{humidity:.1f}", "%",  "Ardrata", "#F59E0B" if humidity > 80 else "#00A8FF")
+    kpi(k3, "🌱", f"{soil_moisture:.1f}", "%", "Maticha Olawa", "#EF4444" if soil_moisture < 30 else "#7FFF00")
     kpi(k4, "💨", f"{co2_level:.0f}", "", "CO₂ ppm", "#F59E0B" if co2_level < 600 else "#00DEB4")
     kpi(k5, "☀️", f"{light_intensity:.0f}", "", "Lux", "#FFD700")
     kpi(k6, "🌬", f"{ventilation_rate:.0f}", "%", "Ventilation", "#EF4444" if ventilation_rate < 40 else "#00DEB4")
@@ -410,7 +410,7 @@ with tab_dashboard:
     c_sus, c_dis, c_irr = st.columns([1.2, 1.2, 1.2])
 
     with c_sus:
-        st.markdown('<p class="section-header">♻️ Sustainability Score</p>', unsafe_allow_html=True)
+        st.markdown('<p class="section-header">♻️ Shashwatata Score</p>', unsafe_allow_html=True)
         gc = sus_data["grade_color"]
         st.markdown(
             f'<div class="glass-card" style="text-align:center">'
@@ -432,7 +432,7 @@ with tab_dashboard:
         st.markdown(f'<div class="glass-card">{html_bars}</div>', unsafe_allow_html=True)
 
     with c_dis:
-        st.markdown('<p class="section-header">🦠 Disease Risk Analysis</p>', unsafe_allow_html=True)
+        st.markdown('<p class="section-header">🦠 Rog Dhoka Vishleshan</p>', unsafe_allow_html=True)
         dlc = dis_data["level_color"]
         st.markdown(
             f'<div class="glass-card" style="text-align:center">'
@@ -440,7 +440,7 @@ with tab_dashboard:
             f'{dis_data["level"].upper()}</span><br>'
             f'<div style="font-family:Orbitron;font-size:2.4rem;color:{dlc};margin:0.4rem 0">'
             f'{dis_data["overall"]:.1f}<span style="font-size:1rem;">%</span></div>'
-            f'<div style="font-size:0.75rem;color:rgba(226,248,244,0.5);">Overall Risk Index</div>'
+            f'<div style="font-size:0.75rem;color:rgba(226,248,244,0.5);">Ekun Dhoka Nirdeshank</div>'
             f'</div>', unsafe_allow_html=True)
 
         disease_html = ""
@@ -451,7 +451,7 @@ with tab_dashboard:
         st.markdown(f'<div class="glass-card">{disease_html}</div>', unsafe_allow_html=True)
 
     with c_irr:
-        st.markdown('<p class="section-header">💦 Irrigation Intelligence</p>', unsafe_allow_html=True)
+        st.markdown('<p class="section-header">💦 Sinchan Intelligence</p>', unsafe_allow_html=True)
         isc = irr_data["status_color"]
         st.markdown(
             f'<div class="glass-card" style="text-align:center">'
@@ -459,16 +459,16 @@ with tab_dashboard:
             f'{irr_data["status"].upper()}</span><br>'
             f'<div style="font-family:Orbitron;font-size:2.2rem;color:{isc};margin:0.4rem 0">'
             f'{irr_data["urgency"]:.1f}<span style="font-size:1rem;">%</span></div>'
-            f'<div style="font-size:0.75rem;color:rgba(226,248,244,0.5);">Urgency Index</div>'
+            f'<div style="font-size:0.75rem;color:rgba(226,248,244,0.5);">Jaruri Nirdeshank</div>'
             f'</div>', unsafe_allow_html=True)
 
         st.markdown(
             f'<div class="glass-card">'
-            + progress_html("Irrigation Urgency", irr_data["urgency"], isc)
+            + progress_html("Sinchan Jaruri", irr_data["urgency"], isc)
             + f'<div style="margin-top:0.8rem;font-size:0.85rem;">'
-            f'📦 Volume Required: <b style="color:{isc}">{irr_data["volume_liters"]:.2f} L/m²</b><br>'
-            f'⏰ Next Irrigation: <b style="color:{isc}">{irr_data["next_irrigation_hours"]}h</b><br>'
-            f'🌿 ET₀ Rate: <b style="color:{isc}">{irr_data["evapotranspiration"]:.3f} mm/hr</b>'
+            f'📦 Aavashyak Aakarman: <b style="color:{isc}">{irr_data["volume_liters"]:.2f} L/m²</b><br>'
+            f'⏰ Pudhil Sinchan: <b style="color:{isc}">{irr_data["next_irrigation_hours"]} taasanantr</b><br>'
+            f'🌿 ET₀ Dar: <b style="color:{isc}">{irr_data["evapotranspiration"]:.3f} mm/hr</b>'
             f'</div></div>', unsafe_allow_html=True)
 
     # ROW 3 — CHARTS
@@ -476,7 +476,7 @@ with tab_dashboard:
     ch1, ch2, ch3 = st.columns(3)
 
     with ch1:
-        st.markdown('<p class="section-header">📊 24h Climate Trend</p>', unsafe_allow_html=True)
+        st.markdown('<p class="section-header">📊 24 Taas Hawaman Kal</p>', unsafe_allow_html=True)
         trend = generate_trend_data(temperature, humidity, 24)
         fig_trend = go.Figure()
         fig_trend.add_trace(go.Scatter(
@@ -496,9 +496,9 @@ with tab_dashboard:
         st.plotly_chart(fig_trend, use_container_width=True, config={"displayModeBar": False})
 
     with ch2:
-        st.markdown('<p class="section-header">🎯 Risk Radar</p>', unsafe_allow_html=True)
-        radar_cats = ["Disease Risk", "Heat Stress", "Water Stress",
-                       "CO₂ Deficit", "Ventilation Risk", "Yield Risk"]
+        st.markdown('<p class="section-header">🎯 Dhoka Radar</p>', unsafe_allow_html=True)
+        radar_cats = ["Rog Dhoka", "Ushnata Tan", "Pani Tan",
+                       "CO₂ Kamtarta", "Hawa Dhoka", "Utpanna Dhoka"]
         heat_pct   = min(100, max(0, (heat_data["heat_index"] - 20) * 2))
         water_str  = max(0, 100 - sus_data["water_efficiency"])
         co2_def    = max(0, (900 - co2_level) / 9)
@@ -511,7 +511,7 @@ with tab_dashboard:
             fill="toself",
             fillcolor="rgba(239,68,68,0.15)",
             line=dict(color="#EF4444", width=2),
-            name="Risk Levels"))
+            name="Dhoka Patali"))
         fig_radar.update_layout(**PLOTLY_LAYOUT, height=280,
             polar=dict(
                 bgcolor="rgba(0,0,0,0)",
@@ -522,8 +522,8 @@ with tab_dashboard:
         st.plotly_chart(fig_radar, use_container_width=True, config={"displayModeBar": False})
 
     with ch3:
-        st.markdown('<p class="section-header">🥧 Sustainability Breakdown</p>', unsafe_allow_html=True)
-        pie_labels = ["Water", "Energy", "Climate", "Disease Prev.", "Yield"]
+        st.markdown('<p class="section-header">🥧 Shashwatata Vibhajan</p>', unsafe_allow_html=True)
+        pie_labels = ["Pani", "Urja", "Hawaman", "Rog Pratibandh", "Utpanna"]
         pie_values = [sus_data["water_efficiency"], sus_data["energy_efficiency"],
                        sus_data["climate_optimization"], sus_data["disease_prevention"],
                        sus_data["yield_potential"]]
@@ -545,7 +545,7 @@ with tab_dashboard:
     temp_grid, hum_grid = generate_zone_heatmap_data(temperature, humidity)
 
     with hm1:
-        st.markdown('<p class="section-header">🌡 Zone Temperature Heatmap</p>', unsafe_allow_html=True)
+        st.markdown('<p class="section-header">🌡 Zone Tapman Heatmap</p>', unsafe_allow_html=True)
         fig_ht = go.Figure(go.Heatmap(
             z=temp_grid, text=[[f"{v:.1f}°C" for v in row] for row in temp_grid],
             texttemplate="%{text}", colorscale="RdYlGn_r",
@@ -555,7 +555,7 @@ with tab_dashboard:
         st.plotly_chart(fig_ht, use_container_width=True, config={"displayModeBar": False})
 
     with hm2:
-        st.markdown('<p class="section-header">💧 Zone Humidity Heatmap</p>', unsafe_allow_html=True)
+        st.markdown('<p class="section-header">💧 Zone Ardrata Heatmap</p>', unsafe_allow_html=True)
         fig_hh = go.Figure(go.Heatmap(
             z=hum_grid, text=[[f"{v:.1f}%" for v in row] for row in hum_grid],
             texttemplate="%{text}", colorscale="Blues",
@@ -574,33 +574,33 @@ with tab_dashboard:
         st.markdown(
             '<div class="glass-card" style="text-align:center;padding:2rem;">'
             '<div style="font-size:2.5rem">⚡</div>'
-            '<div style="font-family:Orbitron;color:#00DEB4;margin:0.5rem 0;">AI Engine Ready</div>'
+            '<div style="font-family:Orbitron;color:#00DEB4;margin:0.5rem 0;">AI Engine Tayar Ahe</div>'
             '<div style="color:rgba(226,248,244,0.5);font-size:0.85rem;">'
-            f'Click <b>Run Detailed AI Analysis</b> in the sidebar to generate intelligent predictions for {crop_type}.</div>'
+            f'<b>Savisthar AI Vishleshan Suru Kara</b> var click kara aani {crop_type} sathi andaz milva.</div>'
             '</div>', unsafe_allow_html=True)
     else:
         src_col, _ = st.columns([2, 3])
         with src_col:
-            st.markdown(f'<span class="engine-pill">Source: {ai_res.get("source","AI Engine")}</span>', unsafe_allow_html=True)
+            st.markdown(f'<span class="engine-pill">Srot: {ai_res.get("source","AI Engine")}</span>', unsafe_allow_html=True)
 
         ai_c1, ai_c2 = st.columns(2)
         with ai_c1:
             st.markdown(
-                f'<div class="ai-card"><h4>🦠 Disease Warning</h4>'
+                f'<div class="ai-card"><h4>🦠 Rogachi Suchna</h4>'
                 f'<p>{ai_res.get("disease_warning","—")}</p></div>', unsafe_allow_html=True)
             st.markdown(
-                f'<div class="ai-card"><h4>🌡 Climate Warning</h4>'
+                f'<div class="ai-card"><h4>🌡 Hawaman Suchna</h4>'
                 f'<p>{ai_res.get("climate_warning","—")}</p></div>', unsafe_allow_html=True)
         with ai_c2:
             st.markdown(
-                f'<div class="ai-card"><h4>💦 Irrigation Advice</h4>'
+                f'<div class="ai-card"><h4>💦 Sinchan Salla</h4>'
                 f'<p>{ai_res.get("irrigation_advice","—")}</p></div>', unsafe_allow_html=True)
             st.markdown(
-                f'<div class="ai-card"><h4>♻️ Sustainability Insight</h4>'
+                f'<div class="ai-card"><h4>♻️ Shashwatata Mahiti</h4>'
                 f'<p>{ai_res.get("sustainability_insight","—")}</p></div>', unsafe_allow_html=True)
 
         st.markdown('<p style="font-family:Orbitron;font-size:0.8rem;color:#00DEB4;'
-                    'letter-spacing:0.1em;margin-top:0.8rem;">⚡ PRIORITY ACTIONS</p>', unsafe_allow_html=True)
+                    'letter-spacing:0.1em;margin-top:0.8rem;">⚡ PRA-DHANYA KRUTI</p>', unsafe_allow_html=True)
         for i, action in enumerate(ai_res.get("top_actions", []), 1):
             st.markdown(f'<div class="action-item">{"🔴" if i==1 else "🟡" if i==2 else "🟢"} '
                         f'<b>#{i}</b> — {action}</div>', unsafe_allow_html=True)
@@ -608,13 +608,13 @@ with tab_dashboard:
         st.markdown(
             f'<div class="glass-card" style="margin-top:0.5rem">'
             f'<b style="color:#00DEB4;font-family:Orbitron;font-size:0.75rem;">'
-            f'📋 OVERALL DETAILED ASSESSMENT</b><br><br>'
+            f'📋 SAMPURNA SAVISTHAR MULYAMAPAN</b><br><br>'
             f'<span style="font-size:0.92rem;line-height:1.7">{ai_res.get("overall_assessment","—")}</span>'
             f'</div>', unsafe_allow_html=True)
 
     # ROW 6 — PERFORMANCE EVALUATION
     st.markdown("---")
-    st.markdown('<p class="section-header">📊 System Performance Evaluation</p>', unsafe_allow_html=True)
+    st.markdown('<p class="section-header">📊 System Kamgiri Mulyamapan</p>', unsafe_allow_html=True)
 
     p1, p2, p3, p4 = st.columns(4)
     def perf_card(col, icon, label, val, color):
@@ -626,14 +626,14 @@ with tab_dashboard:
             f'</div>', unsafe_allow_html=True)
 
     gc = perf_data["grade_color"]
-    perf_card(p1, "🎯", "Prediction Accuracy",    perf_data["prediction_accuracy"],    "#00A8FF")
-    perf_card(p2, "⚙️", "System Efficiency",      perf_data["system_efficiency"],      "#7C3AED")
-    perf_card(p3, "🏡", "Greenhouse Performance", perf_data["greenhouse_performance"], "#00DEB4")
+    perf_card(p1, "🎯", "Andazachi Achukta",    perf_data["prediction_accuracy"],    "#00A8FF")
+    perf_card(p2, "⚙️", "System Kshamata",      perf_data["system_efficiency"],      "#7C3AED")
+    perf_card(p3, "🏡", "Greenhouse Kamgiri", perf_data["greenhouse_performance"], "#00DEB4")
     p4.markdown(
         f'<div class="metric-tile">'
         f'<div style="font-size:1.3rem">🏆</div>'
         f'<div class="metric-value" style="color:{gc};">{perf_data["overall"]:.1f}</div>'
-        f'<div class="metric-label">Overall Score · Grade <b style="color:{gc}">{perf_data["grade"]}</b></div>'
+        f'<div class="metric-label">Ekun Score · Grade <b style="color:{gc}">{perf_data["grade"]}</b></div>'
         f'</div>', unsafe_allow_html=True)
 
 
@@ -642,36 +642,37 @@ with tab_dashboard:
 # =============================================================================
 
 with tab_chat:
-    st.markdown('<p class="section-header">💬 AI Agri-Assistant</p>', unsafe_allow_html=True)
-    st.markdown(f"Ask any questions related to agriculture, greenhouse management, or specifically about your **{crop_type}**.")
+    st.markdown('<p class="section-header">💬 AI Krushi-Sahayyak</p>', unsafe_allow_html=True)
+    st.markdown(f"Krushi, greenhouse vyavasthapan, kiva tumchya **{crop_type}** baddal kontehi prashna vichara.")
 
     if not API_KEY:
-        st.warning("⚠️ Google Gemini API Key is required for the Chatbot. Please add it to your Streamlit Secrets.")
+        st.warning("⚠️ Chatbot sathi Google Gemini API Key aavashyak ahe. Krupaya ti tumchya Streamlit Secrets madhye add kara.")
     else:
         if "messages" not in st.session_state:
             st.session_state.messages = []
 
-        # Display chat messages
+        # Chat messages dakhva
         for message in st.session_state.messages:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
 
         # Chat input
-        if prompt := st.chat_input(f"Ask about managing {crop_type}..."):
+        if prompt := st.chat_input(f"{crop_type} chya vyavasthapanabaddal vichara..."):
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
                 st.markdown(prompt)
 
             with st.chat_message("assistant"):
-                with st.spinner("Thinking..."):
+                with st.spinner("Vichar karat ahe..."):
                     try:
-                        model = genai.GenerativeModel('gemini-1.5-flash')
-                        sys_prompt = f"You are an expert agricultural AI assistant. The user is currently growing {crop_type} at {growth_stage} stage. Give detailed, highly accurate, and practical advice."
+                        # ERROR FIXED HERE: Using gemini-pro instead of gemini-1.5-flash
+                        model = genai.GenerativeModel('gemini-pro')
+                        sys_prompt = f"Tumhi ek tadhnya krushi AI sahayyak ahat. Vaparkarta sadhya {growth_stage} tappyavar {crop_type} vadhavat ahe. Savisthar, achuk aani vyavaharik salla dya."
                         response = model.generate_content(sys_prompt + "\n\nUser Question: " + prompt)
                         st.markdown(response.text)
                         st.session_state.messages.append({"role": "assistant", "content": response.text})
                     except Exception as e:
-                        st.error(f"Failed to generate response. Error: {e}")
+                        st.error(f"Response generate karnyala apayash aale. Error: {e}")
 
 
 # =============================================================================
@@ -679,44 +680,45 @@ with tab_chat:
 # =============================================================================
 
 with tab_vision:
-    st.markdown('<p class="section-header">📸 AI Disease Vision Scanner</p>', unsafe_allow_html=True)
-    st.markdown("Upload a photo of a leaf or plant, and the AI will analyze it to detect diseases and provide treatment recommendations.")
+    st.markdown('<p class="section-header">📸 AI Rog Drushti Scanner</p>', unsafe_allow_html=True)
+    st.markdown("Panacha kiva ropacha photo upload kara, aani AI rog shodhun upcharacha salla deil.")
 
     if not API_KEY:
-        st.warning("⚠️ Google Gemini API Key is required for the Vision Bot. Please add it to your Streamlit Secrets.")
+        st.warning("⚠️ Vision Bot sathi Google Gemini API Key aavashyak ahe. Krupaya ti tumchya Streamlit Secrets madhye add kara.")
     else:
         scan_col1, scan_col2 = st.columns([1, 1])
         
         with scan_col1:
-            uploaded_file = st.file_uploader("Upload an image...", type=["jpg", "jpeg", "png"])
-            camera_file = st.camera_input("...or take a picture")
+            uploaded_file = st.file_uploader("Ek image upload kara...", type=["jpg", "jpeg", "png"])
+            camera_file = st.camera_input("...kiva photo kadha")
             
             img_file = uploaded_file or camera_file
             
             if img_file is not None:
                 image = Image.open(img_file)
-                st.image(image, caption="Uploaded Image", use_column_width=True)
+                st.image(image, caption="Upload keleli Image", use_column_width=True)
 
         with scan_col2:
             if img_file is not None:
-                if st.button("🔍 Scan for Diseases", type="primary", use_container_width=True):
-                    with st.spinner("AI is scanning the image for pathogens and deficiencies..."):
+                if st.button("🔍 Rogansathi Scan Kara", type="primary", use_container_width=True):
+                    with st.spinner("AI pathogens aani kamtartesathi image scan karat ahe..."):
                         try:
-                            vision_model = genai.GenerativeModel('gemini-1.5-flash')
-                            vision_prompt = f"You are an expert plant pathologist. The user is growing {crop_type}. Look at this image and identify any diseases, pests, or nutrient deficiencies. Provide the name of the disease, the severity, and a detailed 3-step actionable recommendation to treat it. If the plant looks healthy, confirm that it is healthy."
+                            # ERROR FIXED HERE: Using gemini-1.5-flash-latest
+                            vision_model = genai.GenerativeModel('gemini-1.5-flash-latest')
+                            vision_prompt = f"Tumhi ek tadhnya plant pathologist ahat. Vaparkarta {crop_type} vadhavat ahe. Ya image kade paha aani kontehi rog, keed, kiva poshak tatvanchi kamtarta sholudhun kadha. Rogache nav, tivrata, aani upchar sathi 3-step kruti salla dya. Jar rop nirougi disat asel, tar te nirougi ahe ase sanga."
                             
                             response = vision_model.generate_content([vision_prompt, image])
                             
                             st.markdown(
                                 f'<div class="glass-card">'
                                 f'<b style="color:#00DEB4;font-family:Orbitron;font-size:0.9rem;">'
-                                f'🔬 SCAN RESULTS</b><br><br>'
+                                f'🔬 SCAN CHE NIKAL</b><br><br>'
                                 f'<span style="font-size:0.95rem;line-height:1.7">{response.text}</span>'
                                 f'</div>', unsafe_allow_html=True)
                         except Exception as e:
-                            st.error(f"Image analysis failed. Error: {e}")
+                            st.error(f"Image analysis fail jhale. Error: {e}")
             else:
-                st.info("Waiting for an image to analyze...")
+                st.info("Analyze karnyasaathi image chi vaat pahat ahe...")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
