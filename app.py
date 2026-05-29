@@ -42,7 +42,7 @@ st.set_page_config(
 GLOBAL_CSS = """
 <style>
 /* ── Fonts ── */
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Exo+2:wght@300;400;600&display=swap');
+@import url('[https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Exo+2:wght@300;400;600&display=swap](https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Exo+2:wght@300;400;600&display=swap)');
 
 /* ── Root palette ── */
 :root {
@@ -540,9 +540,8 @@ with ch3:
     fig_pie.add_annotation(text=f"<b>{sus_data['total']}</b>",
         x=0.5, y=0.5, font=dict(size=26, color="#00DEB4", family="Orbitron"),
         showarrow=False)
-   ```python
-fig_pie.update_layout(**PLOTLY_LAYOUT)
-fig_pie.update_layout(height=280, showlegend=True)
+    fig_pie.update_layout(**PLOTLY_LAYOUT)
+    fig_pie.update_layout(height=280, showlegend=True)
     st.plotly_chart(fig_pie, use_container_width=True, config={"displayModeBar": False})
 
 
@@ -626,7 +625,7 @@ else:
                 'letter-spacing:0.1em;margin-top:0.8rem;">⚡ PRIORITY ACTIONS</p>',
                 unsafe_allow_html=True)
     for i, action in enumerate(ai_res.get("top_actions", []), 1):
-        st.markdown(f'<div class="action-item">{'🔴' if i==1 else '🟡' if i==2 else '🟢'} '
+        st.markdown(f'<div class="action-item">{"🔴" if i==1 else "🟡" if i==2 else "🟢"} '
                     f'<b>#{i}</b> — {action}</div>', unsafe_allow_html=True)
 
     st.markdown(
