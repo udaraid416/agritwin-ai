@@ -15,6 +15,10 @@ import google.generativeai as genai
 import streamlit.components.v1 as components
 from streamlit_lottie import st_lottie
 from PIL import Image
+from streamlit_lottie import st_lottie
+from PIL import Image
+import json
+from duckduckgo_search import DDGS
 
 from config import (
     PARAM_DEFAULTS, GROWTH_STAGES,
@@ -47,6 +51,61 @@ if API_KEY:
 if "vision_result" not in st.session_state: st.session_state.vision_result = None
 if "vision_messages" not in st.session_state: st.session_state.vision_messages = []
 if "market_messages" not in st.session_state: st.session_state.market_messages = []
+if "vision_result" not in st.session_state: st.session_state.vision_result = None
+if "vision_messages" not in st.session_state: st.session_state.vision_messages = []
+if "market_messages" not in st.session_state: st.session_state.market_messages = []
+
+# ─────────────────────────────────────────────────────────────────────────────
+# REAL-TIME WEB SEARCH & AI BASELINE LOGIC
+# ─────────────────────────────────────────────────────────────────────────────
+def search_web_for_crop(crop_name: str, stage: str):
+    query = f"optimal greenhouse and hydroponic growing conditions temperature humidity soil moisture pH EC for {crop_name} at {stage} stage"
+    try:
+        results = DDGS().text(query, max_results=3)
+        search_context = "\n\n".join([res['body'] for res in results])
+        return search_context
+    except Exception as e:
+        return f"Web search failed: {str(e)}"
+
+@st.cache_data(show_spinner=False)
+def fetch_optimal_crop_data(crop_name: str, stage: str):
+    if not API_KEY: return None
+    web_data = search_web_for_crop(crop_name, stage)
+    prompt = f"""
+    You are an expert agricultural botanist and data scientist. 
+    Analyze the crop: '{crop_name}' at the '{stage}' growth stage.
+    
+    Here is the latest real-world data I found on the internet:
+    {web_data}
+    
+    1. If the crop name '{crop_name}' is fake, random (like "asdf"), or not a real plant, set "is_valid" to false.
+    2. Otherwise, set "is_valid" to true and provide the scientifically accurate optimal ranges for this crop and stage.
+    
+    Return ONLY a valid JSON object:
+    {{
+        "is_valid": true,
+        "crop": "crop name",
+        "optimal": {{
+            "temp_min": 20.0, "temp_max": 25.0,
+            "hum_min": 60.0, "hum_max": 70.0,
+            "soil_min": 50.0, "soil_max": 70.0,
+            "co2_min": 800.0, "co2_max": 1000.0,
+            "ph_min": 5.5, "ph_max": 6.5,
+            "ec_min": 1.2, "ec_max": 2.0
+        }},
+        "insights": "Short sentence on why these conditions matter for this crop based on the web data."
+    }}
+    """
+    try:
+        model = genai.GenerativeModel("models/gemini-1.5-flash")
+        response = model.generate_content(prompt)
+        text = response.text.strip()
+        if text.startswith('```json'): text = text[7:]
+        if text.endswith('
+```'): text = text[:-3]
+        return json.loads(text)
+    except Exception as e:
+        return {"is_valid": False, "error": str(e)}
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 🌗 DYNAMIC DAY/NIGHT THEME
