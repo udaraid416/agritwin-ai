@@ -146,6 +146,19 @@ header { background-color: transparent !important; }
 .metric-value { font-family:'Orbitron',sans-serif; font-size:2rem; font-weight:700; line-height:1.1; }
 .metric-label { font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-muted); margin-top:0.25rem; }
 
+/* ── Grade badge ── */
+.grade-badge {
+    display:inline-block;
+    font-family:'Orbitron',sans-serif;
+    font-size:3.5rem; font-weight:800;
+    line-height:1;
+    padding:0.3rem 0.8rem;
+    border-radius:12px;
+    border: 2px solid currentColor;
+    text-shadow: 0 0 24px currentColor;
+    animation: pulseGlow 2.5s ease-in-out infinite;
+}
+
 /* ── Progress bars ── */
 @keyframes progressFill { from { width: 0%; } }
 .progress-container { margin: 0.6rem 0; }
@@ -393,42 +406,19 @@ with tab_dashboard:
     kpi(k5, "☀️", f"{light_intensity:.0f}", "", "Lux", "#FFD700")
     kpi(k6, "🌬", f"{ventilation_rate:.0f}", "%", "Ventilation", "#EF4444" if ventilation_rate < 40 else "#00DEB4")
 
-    # ROW 2 — SUSTAINABILITY (NEW GAUGE METER) + DISEASE RISK + IRRIGATION
+    # ROW 2 — SUSTAINABILITY + DISEASE RISK + IRRIGATION
     st.markdown("---")
     c_sus, c_dis, c_irr = st.columns([1.2, 1.2, 1.2])
 
     with c_sus:
         st.markdown('<p class="section-header">♻️ Sustainability Score</p>', unsafe_allow_html=True)
         gc = sus_data["grade_color"]
-        
-        # New Speedometer/Gauge Chart
-        fig_gauge = go.Figure(go.Indicator(
-            mode = "gauge+number",
-            value = sus_data["total"],
-            domain = {'x': [0, 1], 'y': [0, 1]},
-            number = {'font': {'color': gc, 'size': 45, 'family': 'Orbitron'}},
-            gauge = {
-                'axis': {'range': [None, 100], 'tickcolor': "white"},
-                'bar': {'color': gc, 'thickness': 0.25},
-                'bgcolor': "rgba(0,0,0,0)",
-                'borderwidth': 1,
-                'bordercolor': "gray",
-                'steps': [
-                    {'range': [0, 40], 'color': "rgba(239, 68, 68, 0.2)"},
-                    {'range': [40, 75], 'color': "rgba(245, 158, 11, 0.2)"},
-                    {'range': [75, 100], 'color': "rgba(0, 222, 180, 0.2)"}],
-            }
-        ))
-        fig_gauge.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            height=200, 
-            margin=dict(l=20, r=20, t=30, b=20)
-        )
-        
-        st.markdown(f'<div class="glass-card" style="text-align:center">', unsafe_allow_html=True)
-        st.plotly_chart(fig_gauge, use_container_width=True, config={"displayModeBar": False})
-        st.markdown(f'<div style="font-size:1.1rem; color:{gc}; font-weight:bold;">Grade {sus_data["grade"]}</div></div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="glass-card" style="text-align:center">'
+            f'<span class="grade-badge" style="color:{gc}">{sus_data["grade"]}</span><br>'
+            f'<div style="font-family:Orbitron;font-size:2.2rem;color:{gc};margin:0.4rem 0">'
+            f'{sus_data["total"]}<span style="font-size:1rem;">/100</span></div>'
+            f'</div>', unsafe_allow_html=True)
 
         html_bars = ""
         metrics = [
@@ -575,7 +565,7 @@ with tab_dashboard:
         fig_hh.update_layout(**PLOTLY_LAYOUT, height=260)
         st.plotly_chart(fig_hh, use_container_width=True, config={"displayModeBar": False})
 
-    # ROW 5 — AI RECOMMENDATION PANEL & NEW DOWNLOAD BUTTON
+    # ROW 5 — AI RECOMMENDATION PANEL
     st.markdown("---")
     st.markdown('<p class="section-header">🤖 AI Prediction & Recommendation Engine</p>', unsafe_allow_html=True)
 
@@ -622,27 +612,6 @@ with tab_dashboard:
             f'📋 OVERALL ASSESSMENT</b><br><br>'
             f'<span style="font-size:0.92rem;line-height:1.7">{ai_res.get("overall_assessment","—")}</span>'
             f'</div>', unsafe_allow_html=True)
-            
-        # Download Report Feature (New Feature)
-        report_text = f"=== AgriTwin AI - Farm Management Report ===\n"
-        report_text += f"Date: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}\n"
-        report_text += f"Crop: {crop_type} ({growth_stage})\n\n"
-        report_text += f"--- SENSOR DATA ---\n"
-        report_text += f"Temperature: {temperature}°C\nHumidity: {humidity}%\nSoil Moisture: {soil_moisture}%\nCO2 Level: {co2_level} ppm\n\n"
-        report_text += f"--- AI RECOMMENDATIONS ---\n"
-        report_text += f"Disease Warning: {ai_res.get('disease_warning')}\n\n"
-        report_text += f"Climate Warning: {ai_res.get('climate_warning')}\n\n"
-        report_text += f"Irrigation Advice: {ai_res.get('irrigation_advice')}\n\n"
-        report_text += f"--- OVERALL ASSESSMENT ---\n{ai_res.get('overall_assessment')}\n"
-        
-        st.download_button(
-            label="📄 Download AI Report (.txt)",
-            data=report_text,
-            file_name=f"AgriTwin_Report_{crop_type}_{datetime.datetime.now().strftime('%Y%m%d')}.txt",
-            mime="text/plain",
-            type="secondary",
-            use_container_width=True
-        )
 
     # ROW 6 — PERFORMANCE EVALUATION
     st.markdown("---")
