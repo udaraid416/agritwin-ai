@@ -12,5 +12,5 @@ openai>=1.30.0                # OpenAI (optional fallback)
 
 # Utilities
 python-dotenv>=1.0.0          # .env file support
-google-generativeai
+google-generativeai>=0.5.4
 pillow
