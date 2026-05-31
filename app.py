@@ -970,7 +970,7 @@ with st.sidebar:
     st.markdown('<div class="sb-section">// Climate Sensors</div>', unsafe_allow_html=True)
     temperature      = st.slider("Temperature (°C)",       5.0, 50.0,  PARAM_DEFAULTS["temperature"],      0.5)
     humidity         = st.slider("Humidity (%)",          10.0, 99.0,  PARAM_DEFAULTS["humidity"],          0.5)
-    co2_level        = st.slider("CO₂ (ppm)",            300.0,2000.0, PARAM_DEFAULTS["co2_level"],        10.0)
+    co2_level        = st.slider("CO₂ (ppm)",             300.0,2000.0, PARAM_DEFAULTS["co2_level"],        10.0)
 
     st.markdown('<div class="sb-section">// Soil & Water</div>', unsafe_allow_html=True)
     soil_moisture    = st.slider("Soil Moisture (%)",      5.0, 99.0,  PARAM_DEFAULTS["soil_moisture"],     0.5)
@@ -1248,7 +1248,7 @@ with tab_dashboard:
             ("Climate Risk",    min(100,max(0,(heat_data["heat_index"]-20)*2)), "#EF476F" if temperature>30 else "#FFD166"),
             ("Irrigation Risk", irr_data["urgency"],                            irr_data["status_color"]),
             ("Yield Risk",      max(0,100-sus_data["yield_potential"]),         "#FFD166"),
-            ("CO₂ Deficit",     max(0,(900-co2_level)/9),                      "#9B5DE5"),
+            ("CO₂ Deficit",     max(0,(900-co2_level)/9),                       "#9B5DE5"),
             ("Ventilation",     max(0,100-ventilation_rate),                   "#00BBF9"),
         ]
         st.markdown('<div class="glass-card">', unsafe_allow_html=True)
@@ -1279,8 +1279,10 @@ with tab_dashboard:
             text=[[f"{v:.1f}°C" for v in row] for row in temp_grid],
             texttemplate="%{text}", textfont=dict(family="Share Tech Mono",size=10,color="#EAFBFF"),
             colorscale=[[0,"#00BBF9"],[0.5,"#FFD166"],[1,"#EF476F"]],
-            colorbar=dict(title="°C",tickfont=dict(color="rgba(234,251,255,0.5)",family="Share Tech Mono",size=9),
-                          titlefont=dict(color="rgba(234,251,255,0.5)",size=9)),
+            colorbar=dict(
+                title=dict(text="°C", font=dict(color="rgba(234,251,255,0.5)", size=9)),
+                tickfont=dict(color="rgba(234,251,255,0.5)",family="Share Tech Mono",size=9)
+            ),
             showscale=True,
             hovertemplate="Zone: %{x},%{y}<br>Temp: %{z:.1f}°C<extra></extra>"))
         fig_ht.update_layout(**PLOTLY_LAYOUT, height=260)
@@ -1291,8 +1293,10 @@ with tab_dashboard:
             text=[[f"{v:.1f}%" for v in row] for row in hum_grid],
             texttemplate="%{text}", textfont=dict(family="Share Tech Mono",size=10,color="#EAFBFF"),
             colorscale=[[0,"#050816"],[0.5,"#00BBF9"],[1,"#A8FF3E"]],
-            colorbar=dict(title="%",tickfont=dict(color="rgba(234,251,255,0.5)",family="Share Tech Mono",size=9),
-                          titlefont=dict(color="rgba(234,251,255,0.5)",size=9)),
+            colorbar=dict(
+                title=dict(text="%", font=dict(color="rgba(234,251,255,0.5)", size=9)),
+                tickfont=dict(color="rgba(234,251,255,0.5)",family="Share Tech Mono",size=9)
+            ),
             showscale=True,
             hovertemplate="Zone: %{x},%{y}<br>Humidity: %{z:.1f}%<extra></extra>"))
         fig_hh.update_layout(**PLOTLY_LAYOUT, height=260)
@@ -1484,7 +1488,6 @@ with tab_twin:
         svg_map = f'''<svg viewBox="0 0 800 320" xmlns="http://www.w3.org/2000/svg"
           style="width:100%;height:100%;min-height:300px;background:rgba(0,0,0,0.5);
           border-radius:8px;border:1px solid rgba(0,245,212,0.18)">
-          <!-- Grid -->
           <defs>
             <pattern id="g" width="40" height="40" patternUnits="userSpaceOnUse">
               <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(0,245,212,0.06)" stroke-width="0.8"/>
@@ -1496,7 +1499,6 @@ with tab_twin:
           </defs>
           <rect width="800" height="320" fill="url(#g)"/>
 
-          <!-- Zones -->
           <rect x="8" y="8" width="240" height="140" fill="rgba(0,245,212,0.04)"
             stroke="rgba(0,245,212,0.25)" stroke-width="1" rx="6"/>
           <rect x="280" y="8" width="240" height="140" fill="rgba(0,187,249,0.04)"
@@ -1510,7 +1512,6 @@ with tab_twin:
           <rect x="552" y="172" width="240" height="140" fill="rgba(239,71,111,0.04)"
             stroke="rgba(239,71,111,0.25)" stroke-width="1" rx="6"/>
 
-          <!-- Zone Labels -->
           <text x="20" y="28" font-family="Share Tech Mono,monospace" font-size="9" fill="rgba(0,245,212,0.6)">ZONE A · SEEDLING</text>
           <text x="292" y="28" font-family="Share Tech Mono,monospace" font-size="9" fill="rgba(0,187,249,0.6)">ZONE B · VEGETATIVE</text>
           <text x="564" y="28" font-family="Share Tech Mono,monospace" font-size="9" fill="rgba(168,255,62,0.6)">ZONE C · MATURE</text>
@@ -1518,7 +1519,6 @@ with tab_twin:
           <text x="292" y="192" font-family="Share Tech Mono,monospace" font-size="9" fill="rgba(155,93,229,0.6)">ZONE E · PROCESSING</text>
           <text x="564" y="192" font-family="Share Tech Mono,monospace" font-size="9" fill="rgba(239,71,111,0.6)">ZONE F · STORAGE</text>
 
-          <!-- Connection lines with animation -->
           <line x1="128" y1="78" x2="400" y2="78" stroke="rgba(0,245,212,0.12)" stroke-width="1" stroke-dasharray="4,4">
             <animate attributeName="stroke-dashoffset" from="100" to="0" dur="3s" repeatCount="indefinite"/>
           </line>
@@ -1529,7 +1529,6 @@ with tab_twin:
             <animate attributeName="stroke-dashoffset" from="80" to="0" dur="4s" repeatCount="indefinite"/>
           </line>
 
-          <!-- Sensor nodes: Zone A -->
           <circle cx="128" cy="78" r="7" fill="#00F5D4" filter="url(#glow)">
             <animate attributeName="r" values="7;12;7" dur="2.8s" repeatCount="indefinite"/>
             <animate attributeName="opacity" values="0.9;0.35;0.9" dur="2.8s" repeatCount="indefinite"/>
@@ -1537,7 +1536,6 @@ with tab_twin:
           <circle cx="128" cy="78" r="4" fill="#00F5D4"/>
           <text x="128" y="98" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="9" fill="#00F5D4">T:{temperature:.0f}°C</text>
 
-          <!-- Zone B -->
           <circle cx="400" cy="78" r="7" fill="#00BBF9" filter="url(#glow)">
             <animate attributeName="r" values="7;11;7" dur="3.2s" repeatCount="indefinite"/>
             <animate attributeName="opacity" values="0.9;0.35;0.9" dur="3.2s" repeatCount="indefinite"/>
@@ -1545,7 +1543,6 @@ with tab_twin:
           <circle cx="400" cy="78" r="4" fill="#00BBF9"/>
           <text x="400" y="98" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="9" fill="#00BBF9">H:{humidity:.0f}%</text>
 
-          <!-- Zone C -->
           <circle cx="672" cy="78" r="7" fill="#A8FF3E" filter="url(#glow)">
             <animate attributeName="r" values="7;11;7" dur="2.5s" repeatCount="indefinite"/>
             <animate attributeName="opacity" values="0.9;0.35;0.9" dur="2.5s" repeatCount="indefinite"/>
@@ -1553,7 +1550,6 @@ with tab_twin:
           <circle cx="672" cy="78" r="4" fill="#A8FF3E"/>
           <text x="672" y="98" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="9" fill="#A8FF3E">CO₂:{co2_level:.0f}</text>
 
-          <!-- Zone D -->
           <circle cx="128" cy="242" r="7" fill="#FFD166" filter="url(#glow)">
             <animate attributeName="r" values="7;11;7" dur="3.5s" repeatCount="indefinite"/>
             <animate attributeName="opacity" values="0.9;0.35;0.9" dur="3.5s" repeatCount="indefinite"/>
@@ -1561,7 +1557,6 @@ with tab_twin:
           <circle cx="128" cy="242" r="4" fill="#FFD166"/>
           <text x="128" y="262" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="9" fill="#FFD166">pH:{ph_level:.1f}</text>
 
-          <!-- Zone E -->
           <circle cx="400" cy="242" r="7" fill="#9B5DE5" filter="url(#glow)">
             <animate attributeName="r" values="7;11;7" dur="2.9s" repeatCount="indefinite"/>
             <animate attributeName="opacity" values="0.9;0.35;0.9" dur="2.9s" repeatCount="indefinite"/>
@@ -1569,7 +1564,6 @@ with tab_twin:
           <circle cx="400" cy="242" r="4" fill="#9B5DE5"/>
           <text x="400" y="262" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="9" fill="#9B5DE5">EC:{ec_level:.1f}</text>
 
-          <!-- Zone F -->
           <circle cx="672" cy="242" r="7" fill="{"#EF476F" if soil_moisture<30 else "#00F5D4"}" filter="url(#glow)">
             <animate attributeName="r" values="7;11;7" dur="{"1.5" if soil_moisture<30 else "3"}s" repeatCount="indefinite"/>
             <animate attributeName="opacity" values="0.9;0.35;0.9" dur="{"1.5" if soil_moisture<30 else "3"}s" repeatCount="indefinite"/>
@@ -1577,7 +1571,6 @@ with tab_twin:
           <circle cx="672" cy="242" r="4" fill="{"#EF476F" if soil_moisture<30 else "#00F5D4"}"/>
           <text x="672" y="262" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="9" fill="{"#EF476F" if soil_moisture<30 else "#00F5D4"}">SM:{soil_moisture:.0f}%</text>
 
-          <!-- Central hub -->
           <circle cx="400" cy="160" r="20" fill="rgba(0,245,212,0.08)" stroke="rgba(0,245,212,0.3)" stroke-width="1.5">
             <animate attributeName="r" values="20;26;20" dur="4s" repeatCount="indefinite"/>
           </circle>
@@ -1882,7 +1875,7 @@ with tab_hardware:
         st.markdown(section_header("ALERT RULE CONFIGURATION", "amber" if temperature > 30 else "green", "⚡"), unsafe_allow_html=True)
         phone_num      = st.text_input("Alert Destination (+country code)", value="+947XXXXXXXX")
         temp_threshold = st.slider("Temperature Alert Threshold (°C):", 25.0, 45.0, 35.0)
-        ec_threshold   = st.slider("EC Alert Floor (mS/cm):",           0.5,  2.0,  1.2)
+        ec_threshold   = st.slider("EC Alert Floor (mS/cm):",            0.5,  2.0,  1.2)
         if st.button("▶ Save Alert Configuration", type="primary", use_container_width=True):
             st.success("✅ Automation rules committed. Monitoring active.")
 
@@ -1905,4 +1898,3 @@ with tab_hardware:
                 <span class="t-prompt">></span> DEST     :: {phone_num}<br>
                 <span class="t-prompt">></span> STATUS   :: STANDBY · NO ALERTS
             </div>''', unsafe_allow_html=True)
-
