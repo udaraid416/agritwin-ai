@@ -964,7 +964,7 @@ with st.sidebar:
     ''', unsafe_allow_html=True)
     st.markdown("---")
 
-    crop_type    = st.text_input("🌱 Crop Type", value="Lettuce", placeholder="Lettuce, Tomato…")
+    crop_type    = st.text_input("🌱 Crop Type", value="", placeholder="Lettuce, Tomato…")
     growth_stage = st.selectbox("📈 Growth Stage", GROWTH_STAGES, index=1)
 
     st.markdown('<div class="sb-section">// Climate Sensors</div>', unsafe_allow_html=True)
@@ -1306,10 +1306,12 @@ with tab_dashboard:
         tc1, tc2 = st.columns(2)
         def trow(k,v,unit,ok_range=None):
             if ok_range:
-                s = "ok" if ok_range[0]<=v<=ok_range[1] else ("warn" if abs(v-np.mean(ok_range))/max(ok_range)<0.3 else "crit")
+                num_v = float(v)
+                s = "ok" if ok_range[0]<=num_v<=ok_range[1] else ("warn" if abs(num_v-np.mean(ok_range))/max(ok_range)<0.3 else "crit")
             else: s=""
             sc = {"ok":"#A8FF3E","warn":"#FFD166","crit":"#EF476F","":"rgba(234,251,255,0.6)"}.get(s,"rgba(234,251,255,0.6)")
             return f'<div style="display:flex;justify-content:space-between;font-family:Share Tech Mono,monospace;font-size:0.72rem;padding:0.22rem 0;border-bottom:1px solid rgba(0,245,212,0.06)"><span style="color:var(--text-dim)">{k}</span><span style="color:{sc}">{v} {unit}</span></div>'
+        
         with tc1:
             st.markdown('<div class="glass-card">' +
                 trow("CH-01 TEMPERATURE",f"{temperature:.1f}","°C",(15,28)) +
@@ -1488,6 +1490,7 @@ with tab_twin:
         svg_map = f'''<svg viewBox="0 0 800 320" xmlns="http://www.w3.org/2000/svg"
           style="width:100%;height:100%;min-height:300px;background:rgba(0,0,0,0.5);
           border-radius:8px;border:1px solid rgba(0,245,212,0.18)">
+          <!-- Grid -->
           <defs>
             <pattern id="g" width="40" height="40" patternUnits="userSpaceOnUse">
               <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(0,245,212,0.06)" stroke-width="0.8"/>
@@ -1499,6 +1502,7 @@ with tab_twin:
           </defs>
           <rect width="800" height="320" fill="url(#g)"/>
 
+          <!-- Zones -->
           <rect x="8" y="8" width="240" height="140" fill="rgba(0,245,212,0.04)"
             stroke="rgba(0,245,212,0.25)" stroke-width="1" rx="6"/>
           <rect x="280" y="8" width="240" height="140" fill="rgba(0,187,249,0.04)"
@@ -1512,6 +1516,7 @@ with tab_twin:
           <rect x="552" y="172" width="240" height="140" fill="rgba(239,71,111,0.04)"
             stroke="rgba(239,71,111,0.25)" stroke-width="1" rx="6"/>
 
+          <!-- Zone Labels -->
           <text x="20" y="28" font-family="Share Tech Mono,monospace" font-size="9" fill="rgba(0,245,212,0.6)">ZONE A · SEEDLING</text>
           <text x="292" y="28" font-family="Share Tech Mono,monospace" font-size="9" fill="rgba(0,187,249,0.6)">ZONE B · VEGETATIVE</text>
           <text x="564" y="28" font-family="Share Tech Mono,monospace" font-size="9" fill="rgba(168,255,62,0.6)">ZONE C · MATURE</text>
@@ -1519,6 +1524,7 @@ with tab_twin:
           <text x="292" y="192" font-family="Share Tech Mono,monospace" font-size="9" fill="rgba(155,93,229,0.6)">ZONE E · PROCESSING</text>
           <text x="564" y="192" font-family="Share Tech Mono,monospace" font-size="9" fill="rgba(239,71,111,0.6)">ZONE F · STORAGE</text>
 
+          <!-- Connection lines with animation -->
           <line x1="128" y1="78" x2="400" y2="78" stroke="rgba(0,245,212,0.12)" stroke-width="1" stroke-dasharray="4,4">
             <animate attributeName="stroke-dashoffset" from="100" to="0" dur="3s" repeatCount="indefinite"/>
           </line>
@@ -1529,6 +1535,7 @@ with tab_twin:
             <animate attributeName="stroke-dashoffset" from="80" to="0" dur="4s" repeatCount="indefinite"/>
           </line>
 
+          <!-- Sensor nodes: Zone A -->
           <circle cx="128" cy="78" r="7" fill="#00F5D4" filter="url(#glow)">
             <animate attributeName="r" values="7;12;7" dur="2.8s" repeatCount="indefinite"/>
             <animate attributeName="opacity" values="0.9;0.35;0.9" dur="2.8s" repeatCount="indefinite"/>
@@ -1536,6 +1543,7 @@ with tab_twin:
           <circle cx="128" cy="78" r="4" fill="#00F5D4"/>
           <text x="128" y="98" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="9" fill="#00F5D4">T:{temperature:.0f}°C</text>
 
+          <!-- Zone B -->
           <circle cx="400" cy="78" r="7" fill="#00BBF9" filter="url(#glow)">
             <animate attributeName="r" values="7;11;7" dur="3.2s" repeatCount="indefinite"/>
             <animate attributeName="opacity" values="0.9;0.35;0.9" dur="3.2s" repeatCount="indefinite"/>
@@ -1543,6 +1551,7 @@ with tab_twin:
           <circle cx="400" cy="78" r="4" fill="#00BBF9"/>
           <text x="400" y="98" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="9" fill="#00BBF9">H:{humidity:.0f}%</text>
 
+          <!-- Zone C -->
           <circle cx="672" cy="78" r="7" fill="#A8FF3E" filter="url(#glow)">
             <animate attributeName="r" values="7;11;7" dur="2.5s" repeatCount="indefinite"/>
             <animate attributeName="opacity" values="0.9;0.35;0.9" dur="2.5s" repeatCount="indefinite"/>
@@ -1550,6 +1559,7 @@ with tab_twin:
           <circle cx="672" cy="78" r="4" fill="#A8FF3E"/>
           <text x="672" y="98" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="9" fill="#A8FF3E">CO₂:{co2_level:.0f}</text>
 
+          <!-- Zone D -->
           <circle cx="128" cy="242" r="7" fill="#FFD166" filter="url(#glow)">
             <animate attributeName="r" values="7;11;7" dur="3.5s" repeatCount="indefinite"/>
             <animate attributeName="opacity" values="0.9;0.35;0.9" dur="3.5s" repeatCount="indefinite"/>
@@ -1557,6 +1567,7 @@ with tab_twin:
           <circle cx="128" cy="242" r="4" fill="#FFD166"/>
           <text x="128" y="262" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="9" fill="#FFD166">pH:{ph_level:.1f}</text>
 
+          <!-- Zone E -->
           <circle cx="400" cy="242" r="7" fill="#9B5DE5" filter="url(#glow)">
             <animate attributeName="r" values="7;11;7" dur="2.9s" repeatCount="indefinite"/>
             <animate attributeName="opacity" values="0.9;0.35;0.9" dur="2.9s" repeatCount="indefinite"/>
@@ -1564,6 +1575,7 @@ with tab_twin:
           <circle cx="400" cy="242" r="4" fill="#9B5DE5"/>
           <text x="400" y="262" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="9" fill="#9B5DE5">EC:{ec_level:.1f}</text>
 
+          <!-- Zone F -->
           <circle cx="672" cy="242" r="7" fill="{"#EF476F" if soil_moisture<30 else "#00F5D4"}" filter="url(#glow)">
             <animate attributeName="r" values="7;11;7" dur="{"1.5" if soil_moisture<30 else "3"}s" repeatCount="indefinite"/>
             <animate attributeName="opacity" values="0.9;0.35;0.9" dur="{"1.5" if soil_moisture<30 else "3"}s" repeatCount="indefinite"/>
@@ -1571,6 +1583,7 @@ with tab_twin:
           <circle cx="672" cy="242" r="4" fill="{"#EF476F" if soil_moisture<30 else "#00F5D4"}"/>
           <text x="672" y="262" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="9" fill="{"#EF476F" if soil_moisture<30 else "#00F5D4"}">SM:{soil_moisture:.0f}%</text>
 
+          <!-- Central hub -->
           <circle cx="400" cy="160" r="20" fill="rgba(0,245,212,0.08)" stroke="rgba(0,245,212,0.3)" stroke-width="1.5">
             <animate attributeName="r" values="20;26;20" dur="4s" repeatCount="indefinite"/>
           </circle>
@@ -1852,7 +1865,7 @@ with tab_hardware:
                 Send sensor readings in JSON format for real-time Digital Twin synchronization.
             </div>
         </div>''', unsafe_allow_html=True)
-        st.code('POST https://agritwin-ai.streamlit.app/api/v1/sensors\n{\n  "api_key": "YOUR_SECRET_KEY",\n  "temp": 28.5,\n  "hum": 65.2,\n  "ec": 1.8,\n  "ph": 6.2,\n  "co2": 850\n}', language="json")
+        st.code('POST https://agritwin-ai.streamlit.app/api/v1/sensorsn{\n  "api_key": "YOUR_SECRET_KEY",\n  "temp": 28.5,\n  "hum": 65.2,\n  "ec": 1.8,\n  "ph": 6.2,\n  "co2": 850\n}', language="json")
         st.button("↺ Generate New API Key", use_container_width=True)
 
         with st.expander("▸ Integration Guide & Supported Hardware"):
