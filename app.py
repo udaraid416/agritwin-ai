@@ -1,6 +1,3 @@
-bash
-
-cat > /mnt/user-data/outputs/app.py << 'ENDOFFILE'
 """
 app.py — AI-Powered Predictive Digital Twin for Smart Protected Agriculture
 CYBER AGRICULTURE DIGITAL TWIN COMMAND CENTER
@@ -1908,5 +1905,4 @@ with tab_hardware:
                 <span class="t-prompt">></span> DEST     :: {phone_num}<br>
                 <span class="t-prompt">></span> STATUS   :: STANDBY · NO ALERTS
             </div>''', unsafe_allow_html=True)
-ENDOFFILE
-echo "Done: $(wc -l < /mnt/user-data/outputs/app.py) lines"
+
